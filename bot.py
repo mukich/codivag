@@ -25,7 +25,49 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         reply_markup=main_menu_keyboard()
     )
 
-# Обробка кнопок меню
+# Відправка результатів блоками
+async def send_results(update_or_query, context, results, page=0):
+    per_page = 10
+    total_pages = (len(results) + per_page - 1) // per_page  # округлення вгору
+    start = page * per_page
+    end = start + per_page
+    chunk = results[start:end]
+
+    if not chunk.empty:
+        text = ""
+        for _, row in chunk.iterrows():
+            text += f"🆔 *Article:* {row.get('Article','N/A')}\n"
+            text += f"🔢 *Version:* {row.get('Version','N/A')}\n"
+            text += f"📊 *Dataset:* {row.get('Dataset','N/A')}\n"
+            text += f"💻 *Model:* {row.get('Model','N/A')}\n"
+            text += f"📅 *Year:* {row.get('Year','N/A')}\n"
+            text += f"🌍 *Region:* {row.get('Region','N/A')}\n"
+            text += "---------------------\n"
+
+        # Додаємо лічильник сторінок
+        text += f"\n📖 _Сторінка {page+1} з {total_pages}_"
+
+        # Кнопки пагінації
+        keyboard = []
+        if page > 0:
+            keyboard.append(InlineKeyboardButton("⬅️ Назад", callback_data=f"page_{page-1}"))
+        if end < len(results):
+            keyboard.append(InlineKeyboardButton("➡️ Далі", callback_data=f"page_{page+1}"))
+        keyboard.append(InlineKeyboardButton("🏠 Головне меню", callback_data="menu"))
+
+        reply_markup = InlineKeyboardMarkup([keyboard])
+
+        if hasattr(update_or_query, "message"):  # виклик із search_database
+            await update_or_query.message.reply_text(text, parse_mode="Markdown", reply_markup=reply_markup)
+        else:  # виклик із callback_query
+            await update_or_query.edit_message_text(text, parse_mode="Markdown", reply_markup=reply_markup)
+    else:
+        if hasattr(update_or_query, "message"):
+            await update_or_query.message.reply_text("⚠️ Нічого не знайдено.", reply_markup=main_menu_keyboard())
+        else:
+            await update_or_query.edit_message_text("⚠️ Нічого не знайдено.", reply_markup=main_menu_keyboard())
+
+# Обробка натискань кнопок
 async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
@@ -45,43 +87,17 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "3️⃣ Довідка — ця інструкція.",
             reply_markup=main_menu_keyboard()
         )
+    elif query.data == "menu":
+        await query.message.reply_text(
+            "🏠 Ви повернулися в головне меню.",
+            reply_markup=main_menu_keyboard()
+        )
     elif query.data.startswith("page_"):
         _, page = query.data.split("_")
         page = int(page)
-        results = context.user_data.get("search_results", [])
-        await send_results(update, results, page)
-
-# Функція виводу результатів блоками
-async def send_results(update, results, page=0):
-    per_page = 10
-    start = page * per_page
-    end = start + per_page
-    chunk = results[start:end]
-
-    if not chunk:
-        await update.callback_query.message.reply_text("⚠️ Немає результатів для відображення.", reply_markup=main_menu_keyboard())
-        return
-
-    text = ""
-    for _, row in chunk.iterrows():
-        text += f"🆔 *Article:* {row.get('Article','N/A')}\n"
-        text += f"🔢 *Version:* {row.get('Version','N/A')}\n"
-        text += f"📊 *Dataset:* {row.get('Dataset','N/A')}\n"
-        text += f"💻 *Model:* {row.get('Model','N/A')}\n"
-        text += f"📅 *Year:* {row.get('Year','N/A')}\n"
-        text += f"🌍 *Region:* {row.get('Region','N/A')}\n"
-        text += "---------------------\n"
-
-    # Кнопки пагінації
-    keyboard = []
-    if page > 0:
-        keyboard.append(InlineKeyboardButton("⬅️ Назад", callback_data=f"page_{page-1}"))
-    if end < len(results):
-        keyboard.append(InlineKeyboardButton("➡️ Далі", callback_data=f"page_{page+1}"))
-    keyboard.append(InlineKeyboardButton("🏠 Головне меню", callback_data="menu"))
-
-    reply_markup = InlineKeyboardMarkup([keyboard])
-    await update.callback_query.message.reply_text(text, parse_mode="Markdown", reply_markup=reply_markup)
+        results = context.user_data.get("search_results", pd.DataFrame())
+        if not results.empty:
+            await send_results(query, context, results, page)
 
 # Пошук у базі
 async def search_database(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -94,9 +110,7 @@ async def search_database(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     if not results.empty:
         context.user_data["search_results"] = results
-        # Стартуємо з першої сторінки
-        dummy = type("obj", (object,), {"callback_query": update})
-        await send_results(dummy, results, page=0)
+        await send_results(update, context, results, page=0)
     else:
         await update.message.reply_text("Нічого не знайдено 😔", reply_markup=main_menu_keyboard())
 
