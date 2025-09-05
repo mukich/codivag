@@ -3,21 +3,27 @@ import pandas as pd
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Application, CommandHandler, CallbackQueryHandler, MessageHandler, filters, ContextTypes
 
-# Токен зберігається у секретах fly.io
+# Токен зберігається у секретах Fly.io
 TOKEN = os.getenv("BOT_TOKEN")
 
-# Завантажуємо Excel-таблицю (має бути в цій же папці)
+# Завантажуємо Excel-таблицю (має бути в тій же папці)
 df = pd.read_excel("data.xlsx")
 
-# Створюємо стартове меню
-async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+# Функція створює головне меню
+def main_menu_keyboard():
     keyboard = [
         [InlineKeyboardButton("Пошук у базі", callback_data="search")],
         [InlineKeyboardButton("Контакти", callback_data="contacts")],
         [InlineKeyboardButton("Довідка", callback_data="help")]
     ]
-    reply_markup = InlineKeyboardMarkup(keyboard)
-    await update.message.reply_text("Привіт! Це бот із пошуку датасетів. Для початку, виберіть розділ:", reply_markup=reply_markup)
+    return InlineKeyboardMarkup(keyboard)
+
+# Стартове меню
+async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text(
+        "Привіт! Це бот із пошуку датасетів. Для початку, виберіть розділ:",
+        reply_markup=main_menu_keyboard()
+    )
 
 # Обробка натискань кнопок
 async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -26,13 +32,21 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     if query.data == "search":
         await query.message.reply_text("Введіть артикул блоку чи назву датасету для пошуку:")
-        # Наступний текст користувача буде оброблятися MessageHandler
     elif query.data == "contacts":
-        await query.message.reply_text("📞 Контакти:\nEmail: datenflash@proton.me\nТелеграм: @mukich1")
+        await query.message.reply_text(
+            "📞 Контакти:\nEmail: datenflash@proton.me\nТелеграм: @mukich1",
+            reply_markup=main_menu_keyboard()
+        )
     elif query.data == "help":
-        await query.message.reply_text("ℹ️ Довідка:\n1️⃣ Пошук у базі — знайти інформацію.\n2️⃣ Контакти — зв'язок з адміністрацією.\n3️⃣ Довідка — ця інструкція.")
+        await query.message.reply_text(
+            "ℹ️ Довідка:\n"
+            "1️⃣ Пошук у базі — знайти інформацію.\n"
+            "2️⃣ Контакти — зв'язок з адміністрацією.\n"
+            "3️⃣ Довідка — ця інструкція.",
+            reply_markup=main_menu_keyboard()
+        )
 
-# Пошук у базі
+# Пошук у базі з гарним форматуванням
 async def search_database(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.message.text.strip()
     mask = (
@@ -40,10 +54,16 @@ async def search_database(update: Update, context: ContextTypes.DEFAULT_TYPE):
         df['Dataset'].str.contains(query, case=False, na=False)
     )
     result = df[mask]
+
     if not result.empty:
-        await update.message.reply_text(result.to_string(index=False))
+        text = ""
+        for _, row in result.iterrows():
+            text += f"🆔 *Article:* {row['Article']}\n"
+            text += f"📊 *Dataset:* {row['Dataset']}\n"
+            text += "---------------------\n"
+        await update.message.reply_text(text, parse_mode="Markdown", reply_markup=main_menu_keyboard())
     else:
-        await update.message.reply_text("Нічого не знайдено 😔")
+        await update.message.reply_text("Нічого не знайдено 😔", reply_markup=main_menu_keyboard())
 
 # Основна функція
 def main():
@@ -55,4 +75,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
