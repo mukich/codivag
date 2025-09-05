@@ -16,9 +16,9 @@ if "Year" in df.columns:
 # Функція головного меню
 def main_menu_keyboard():
     keyboard = [
-        [InlineKeyboardButton("Пошук у базі", callback_data="search")],
-        [InlineKeyboardButton("Контакти", callback_data="contacts")],
-        [InlineKeyboardButton("Довідка", callback_data="help")]
+        [InlineKeyboardButton("🔍 Пошук у базі", callback_data="search")],
+        [InlineKeyboardButton("📞 Контакти", callback_data="contacts")],
+        [InlineKeyboardButton("ℹ️ Довідка", callback_data="help")]
     ]
     return InlineKeyboardMarkup(keyboard)
 
@@ -139,3 +139,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
