@@ -27,7 +27,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 # Відправка результатів блоками
 async def send_results(update_or_query, context, results, page=0):
-    per_page = 10
+    per_page = 5
     total_pages = (len(results) + per_page - 1) // per_page  # округлення вгору
     start = page * per_page
     end = start + per_page
@@ -53,7 +53,7 @@ async def send_results(update_or_query, context, results, page=0):
             keyboard.append(InlineKeyboardButton("⬅️ Назад", callback_data=f"page_{page-1}"))
         if end < len(results):
             keyboard.append(InlineKeyboardButton("➡️ Далі", callback_data=f"page_{page+1}"))
-        keyboard.append(InlineKeyboardButton("🏠 Головне меню", callback_data="menu"))
+        keyboard.append(InlineKeyboardButton("🏠 На початок", callback_data="menu"))
 
         reply_markup = InlineKeyboardMarkup([keyboard])
 
@@ -124,3 +124,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
