@@ -54,7 +54,7 @@ async def send_results(update_or_query, context, results, page=0):
             text += f"🆔 *Article:* {clean(row.get('Article'))}\n"
             text += f"🔢 *Version:* {clean(row.get('Version'))}\n"
             text += f"📊 *Dataset:* {clean(row.get('Dataset'))}\n"
-            text += f"💻 *Model:* {clean(row.get('Model'))}\n"
+            text += f"🚙 *Model:* {clean(row.get('Model'))}\n"
             text += f"📅 *Year:* {clean(row.get('Year'))}\n"
             text += f"🌍 *Region:* {clean(row.get('Region'))}\n"
             text += "--------------------------------------\n"
@@ -62,7 +62,7 @@ async def send_results(update_or_query, context, results, page=0):
         # Лічильник сторінок
         text += f"\n📖 _Сторінка {page+1} з {total_pages}_"
 
-        # Кнопки пагінації
+        # Кнопки навігації
         keyboard = []
         if page > 0:
             keyboard.append(InlineKeyboardButton("⬅️ Назад", callback_data=f"page_{page-1}"))
@@ -139,5 +139,6 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
