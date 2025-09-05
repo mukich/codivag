@@ -57,7 +57,7 @@ async def send_results(update_or_query, context, results, page=0):
             text += f"💻 *Model:* {clean(row.get('Model'))}\n"
             text += f"📅 *Year:* {clean(row.get('Year'))}\n"
             text += f"🌍 *Region:* {clean(row.get('Region'))}\n"
-            text += "---------------------\n"
+            text += "--------------------------------------\n"
 
         # Лічильник сторінок
         text += f"\n📖 _Сторінка {page+1} з {total_pages}_"
@@ -139,4 +139,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
