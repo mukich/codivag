@@ -32,7 +32,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(
         "Привіт!😉\n"
         "Це телеграм-бот із пошуку датасетів.\n"
-        "Для початку, виберіть розділ:⤵️",
+        "Для початку, виберіть розділ ⤵️",
         reply_markup=main_menu_keyboard()
     )
 
@@ -90,7 +90,7 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await query.answer()
     
     if query.data == "search":
-        await query.message.reply_text("Введіть артикул блоку чи назву датасету для пошуку:")
+        await query.message.reply_text("Введіть артикул блоку чи назву датасету для пошуку ⤵️")
     elif query.data == "contacts":
         await query.message.reply_text(
             "📞 Контакти:\n"
