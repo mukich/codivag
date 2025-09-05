@@ -9,6 +9,10 @@ TOKEN = os.getenv("BOT_TOKEN")
 # Завантажуємо Excel-таблицю
 df = pd.read_excel("data.xlsx")
 
+# Перетворюємо колонку Year у int або залишаємо порожньою
+if "Year" in df.columns:
+    df["Year"] = df["Year"].apply(lambda x: int(x) if pd.notna(x) else "")
+
 # Функція головного меню
 def main_menu_keyboard():
     keyboard = [
@@ -30,9 +34,15 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         reply_markup=main_menu_keyboard()
     )
 
+# Функція для очищення даних і заміни порожніх значень на ---
+def clean(value):
+    if pd.isna(value) or str(value).strip() == "":
+        return "---"
+    return str(value)
+
 # Відправка результатів блоками
 async def send_results(update_or_query, context, results, page=0):
-    per_page = 5   # показуємо по 5 результатів
+    per_page = 5   # по 5 результатів на сторінку
     total_pages = (len(results) + per_page - 1) // per_page
     start = page * per_page
     end = start + per_page
@@ -41,12 +51,12 @@ async def send_results(update_or_query, context, results, page=0):
     if not chunk.empty:
         text = ""
         for _, row in chunk.iterrows():
-            text += f"🆔 *Article:* {row.get('Article','N/A')}\n"
-            text += f"🔢 *Version:* {row.get('Version','N/A')}\n"
-            text += f"📊 *Dataset:* {row.get('Dataset','N/A')}\n"
-            text += f"💻 *Model:* {row.get('Model','N/A')}\n"
-            text += f"📅 *Year:* {row.get('Year','N/A')}\n"
-            text += f"🌍 *Region:* {row.get('Region','N/A')}\n"
+            text += f"🆔 *Article:* {clean(row.get('Article'))}\n"
+            text += f"🔢 *Version:* {clean(row.get('Version'))}\n"
+            text += f"📊 *Dataset:* {clean(row.get('Dataset'))}\n"
+            text += f"💻 *Model:* {clean(row.get('Model'))}\n"
+            text += f"📅 *Year:* {clean(row.get('Year'))}\n"
+            text += f"🌍 *Region:* {clean(row.get('Region'))}\n"
             text += "---------------------\n"
 
         # Лічильник сторінок
@@ -62,9 +72,9 @@ async def send_results(update_or_query, context, results, page=0):
 
         reply_markup = InlineKeyboardMarkup([keyboard])
 
-        if hasattr(update_or_query, "message"):  # виклик із search_database
+        if hasattr(update_or_query, "message"):
             await update_or_query.message.reply_text(text, parse_mode="Markdown", reply_markup=reply_markup)
-        else:  # виклик із callback_query
+        else:
             await update_or_query.edit_message_text(text, parse_mode="Markdown", reply_markup=reply_markup)
     else:
         if hasattr(update_or_query, "message"):
@@ -117,7 +127,7 @@ async def search_database(update: Update, context: ContextTypes.DEFAULT_TYPE):
         context.user_data["search_results"] = results
         await send_results(update, context, results, page=0)
     else:
-        await update.message.reply_text("Нічого не знайдено 😔", reply_markup=main_menu_keyboard())
+        await update.message.reply_text("⚠️ Нічого не знайдено.", reply_markup=main_menu_keyboard())
 
 # Основна функція
 def main():
