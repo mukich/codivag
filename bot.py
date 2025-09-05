@@ -93,13 +93,17 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await query.message.reply_text("Введіть артикул блоку чи назву датасету для пошуку:")
     elif query.data == "contacts":
         await query.message.reply_text(
-            "📞 Контакти:\nEmail: datenflash@proton.me\nТелеграм: @mukich1",
+            "📞 Контакти:\n"
+            "Email: datenflash@proton.me\n"
+            "Telegram: @mukich1 або @mr_muhich\n"
+            "Instagram: @codiVAG",
             reply_markup=back_to_menu_keyboard()
         )
     elif query.data == "help":
         await query.message.reply_text(
             "ℹ️ Довідка:\n"
-            "Цей телеграм-бот створений для швидкого пошуку датасетів у нашій базі даних. Для пошуку просто введіть артикул блоку управління або назву датасету",
+            "Цей телеграм-бот створений для швидкого пошуку датасетів у нашій базі даних.\n
+            "Для пошуку просто введіть артикул блоку управління або назву датасету",
             reply_markup=back_to_menu_keyboard()
         )
     elif query.data == "menu":
