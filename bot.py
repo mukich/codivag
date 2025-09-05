@@ -18,6 +18,11 @@ def main_menu_keyboard():
     ]
     return InlineKeyboardMarkup(keyboard)
 
+# Клавіатура для підменю (лише одна кнопка "На головну")
+def back_to_menu_keyboard():
+    keyboard = [[InlineKeyboardButton("🏠 На головну", callback_data="menu")]]
+    return InlineKeyboardMarkup(keyboard)
+
 # Стартове меню
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(
@@ -27,8 +32,8 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 # Відправка результатів блоками
 async def send_results(update_or_query, context, results, page=0):
-    per_page = 5
-    total_pages = (len(results) + per_page - 1) // per_page  # округлення вгору
+    per_page = 5   # показуємо по 5 результатів
+    total_pages = (len(results) + per_page - 1) // per_page
     start = page * per_page
     end = start + per_page
     chunk = results[start:end]
@@ -44,7 +49,7 @@ async def send_results(update_or_query, context, results, page=0):
             text += f"🌍 *Region:* {row.get('Region','N/A')}\n"
             text += "---------------------\n"
 
-        # Додаємо лічильник сторінок
+        # Лічильник сторінок
         text += f"\n📖 _Сторінка {page+1} з {total_pages}_"
 
         # Кнопки пагінації
@@ -53,7 +58,7 @@ async def send_results(update_or_query, context, results, page=0):
             keyboard.append(InlineKeyboardButton("⬅️ Назад", callback_data=f"page_{page-1}"))
         if end < len(results):
             keyboard.append(InlineKeyboardButton("➡️ Далі", callback_data=f"page_{page+1}"))
-        keyboard.append(InlineKeyboardButton("🏠 На початок", callback_data="menu"))
+        keyboard.append(InlineKeyboardButton("🏠 Головне меню", callback_data="menu"))
 
         reply_markup = InlineKeyboardMarkup([keyboard])
 
@@ -77,7 +82,7 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
     elif query.data == "contacts":
         await query.message.reply_text(
             "📞 Контакти:\nEmail: datenflash@proton.me\nТелеграм: @mukich1",
-            reply_markup=main_menu_keyboard()
+            reply_markup=back_to_menu_keyboard()
         )
     elif query.data == "help":
         await query.message.reply_text(
@@ -85,7 +90,7 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "1️⃣ Пошук у базі — знайти інформацію.\n"
             "2️⃣ Контакти — зв'язок з адміністрацією.\n"
             "3️⃣ Довідка — ця інструкція.",
-            reply_markup=main_menu_keyboard()
+            reply_markup=back_to_menu_keyboard()
         )
     elif query.data == "menu":
         await query.message.reply_text(
@@ -124,4 +129,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
