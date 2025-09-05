@@ -6,10 +6,10 @@ from telegram.ext import Application, CommandHandler, CallbackQueryHandler, Mess
 # Токен зберігається у секретах Fly.io
 TOKEN = os.getenv("BOT_TOKEN")
 
-# Завантажуємо Excel-таблицю (має бути в тій же папці)
+# Завантажуємо Excel-таблицю
 df = pd.read_excel("data.xlsx")
 
-# Функція створює головне меню
+# Функція головного меню
 def main_menu_keyboard():
     keyboard = [
         [InlineKeyboardButton("Пошук у базі", callback_data="search")],
@@ -25,7 +25,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         reply_markup=main_menu_keyboard()
     )
 
-# Обробка натискань кнопок
+# Обробка кнопок меню
 async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
@@ -45,23 +45,58 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "3️⃣ Довідка — ця інструкція.",
             reply_markup=main_menu_keyboard()
         )
+    elif query.data.startswith("page_"):
+        _, page = query.data.split("_")
+        page = int(page)
+        results = context.user_data.get("search_results", [])
+        await send_results(update, results, page)
 
-# Пошук у базі з гарним форматуванням
+# Функція виводу результатів блоками
+async def send_results(update, results, page=0):
+    per_page = 10
+    start = page * per_page
+    end = start + per_page
+    chunk = results[start:end]
+
+    if not chunk:
+        await update.callback_query.message.reply_text("⚠️ Немає результатів для відображення.", reply_markup=main_menu_keyboard())
+        return
+
+    text = ""
+    for _, row in chunk.iterrows():
+        text += f"🆔 *Article:* {row.get('Article','N/A')}\n"
+        text += f"🔢 *Version:* {row.get('Version','N/A')}\n"
+        text += f"📊 *Dataset:* {row.get('Dataset','N/A')}\n"
+        text += f"💻 *Model:* {row.get('Model','N/A')}\n"
+        text += f"📅 *Year:* {row.get('Year','N/A')}\n"
+        text += f"🌍 *Region:* {row.get('Region','N/A')}\n"
+        text += "---------------------\n"
+
+    # Кнопки пагінації
+    keyboard = []
+    if page > 0:
+        keyboard.append(InlineKeyboardButton("⬅️ Назад", callback_data=f"page_{page-1}"))
+    if end < len(results):
+        keyboard.append(InlineKeyboardButton("➡️ Далі", callback_data=f"page_{page+1}"))
+    keyboard.append(InlineKeyboardButton("🏠 Головне меню", callback_data="menu"))
+
+    reply_markup = InlineKeyboardMarkup([keyboard])
+    await update.callback_query.message.reply_text(text, parse_mode="Markdown", reply_markup=reply_markup)
+
+# Пошук у базі
 async def search_database(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.message.text.strip()
     mask = (
         df['Article'].str.contains(query, case=False, na=False) |
         df['Dataset'].str.contains(query, case=False, na=False)
     )
-    result = df[mask]
+    results = df[mask]
 
-    if not result.empty:
-        text = ""
-        for _, row in result.iterrows():
-            text += f"🆔 *Article:* {row['Article']}\n"
-            text += f"📊 *Dataset:* {row['Dataset']}\n"
-            text += "---------------------\n"
-        await update.message.reply_text(text, parse_mode="Markdown", reply_markup=main_menu_keyboard())
+    if not results.empty:
+        context.user_data["search_results"] = results
+        # Стартуємо з першої сторінки
+        dummy = type("obj", (object,), {"callback_query": update})
+        await send_results(dummy, results, page=0)
     else:
         await update.message.reply_text("Нічого не знайдено 😔", reply_markup=main_menu_keyboard())
 
