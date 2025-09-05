@@ -17,7 +17,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         [InlineKeyboardButton("Довідка", callback_data="help")]
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
-    await update.message.reply_text("Виберіть розділ:", reply_markup=reply_markup)
+    await update.message.reply_text("Привіт! Це бот із пошуку датасетів. Для початку, виберіть розділ:", reply_markup=reply_markup)
 
 # Обробка натискань кнопок
 async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -55,3 +55,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
