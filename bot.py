@@ -10,11 +10,18 @@ TOKEN = os.getenv("BOT_TOKEN")
 df = pd.read_excel("data.xlsx")
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("Привіт! Надішли слово, і я знайду його в таблиці 📊")
+    await update.message.reply_text("Привіт! Надішли артикул блоки чи назву датасету, і я перевірю чи маю його у базі")
 
 async def search(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.message.text.strip()
     result = df[df.apply(lambda row: row.astype(str).str.contains(query, case=False).any(), axis=1)]
+
+ # Пошук по двох колонках з ігноруванням регістру
+    mask = (
+        df['Article'].str.contains(query, case=False, na=False) |
+        df['Dataset'].str.contains(query, case=False, na=False)
+    )
+    result = df[mask]
     
     if not result.empty:
         text = result.to_string(index=False)
