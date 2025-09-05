@@ -97,9 +97,7 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
     elif query.data == "help":
         await query.message.reply_text(
             "ℹ️ Довідка:\n"
-            "1️⃣ Пошук у базі — знайти інформацію.\n"
-            "2️⃣ Контакти — зв'язок з адміністрацією.\n"
-            "3️⃣ Довідка — ця інструкція.",
+            "Цей телеграм-бот створений для швидкого пошуку датасетів у нашій базі даних. Для пошуку просто введіть артикул блоку управління або назву датасету",
             reply_markup=back_to_menu_keyboard()
         )
     elif query.data == "menu":
@@ -139,6 +137,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
