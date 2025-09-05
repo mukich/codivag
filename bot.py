@@ -102,7 +102,7 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
     elif query.data == "help":
         await query.message.reply_text(
             "ℹ️ Довідка:\n"
-            "Цей телеграм-бот створений для швидкого пошуку датасетів у нашій базі даних.\n
+            "Цей телеграм-бот створений для швидкого пошуку датасетів у нашій базі даних.\n"
             "Для пошуку просто введіть артикул блоку управління або назву датасету",
             reply_markup=back_to_menu_keyboard()
         )
@@ -143,6 +143,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
