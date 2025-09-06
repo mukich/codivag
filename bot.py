@@ -3,17 +3,44 @@ import pandas as pd
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Application, CommandHandler, CallbackQueryHandler, MessageHandler, filters, ContextTypes
 
-# Токен зберігається у секретах Fly.io або у змінній оточення
+# ====== Налаштування токена ======
+# Задай BOT_TOKEN у змінних оточення (наприклад, у Fly.io secrets або локально)
 TOKEN = os.getenv("BOT_TOKEN")
 
-# Завантажуємо Excel-таблицю
-df = pd.read_excel("data.xlsx")
 
-# Перетворюємо колонку Year у int або залишаємо порожньою
-if "Year" in df.columns:
-    df["Year"] = df["Year"].apply(lambda x: int(x) if pd.notna(x) else "")
+# ====== Завантаження даних ======
+def load_dataframe(path: str = "data.xlsx") -> pd.DataFrame:
+    try:
+        df = pd.read_excel(path)
+    except Exception as e:
+        # Порожня таблиця як fallback, щоб бот не падав
+        df = pd.DataFrame(columns=["Article", "Version", "Dataset", "Model", "Year", "Region"])
 
-# --- Словник перекладів ---
+    # Гарантуємо наявність потрібних колонок
+    for col in ["Article", "Version", "Dataset", "Model", "Year", "Region"]:
+        if col not in df.columns:
+            df[col] = ""
+
+    # Перетворюємо Year у int, якщо можливо
+    try:
+        df["Year"] = df["Year"].apply(lambda x: int(x) if pd.notna(x) and str(x).strip() != "" else "")
+    except Exception:
+        pass
+
+    # Всі текстові — в str
+    for col in ["Article", "Version", "Dataset", "Model", "Region"]:
+        try:
+            df[col] = df[col].astype(str)
+        except Exception:
+            pass
+
+    return df
+
+
+df = load_dataframe("data.xlsx")
+
+
+# ====== Словник перекладів (7 мов) ======
 LANGUAGES = {
     "uk": {
         "name": "Українська",
@@ -283,8 +310,9 @@ LANGUAGES = {
     }
 }
 
-# --- Побудова меню ---
-def main_menu_keyboard(lang="uk"):
+
+# ====== Побудова меню ======
+def main_menu_keyboard(lang: str = "uk") -> InlineKeyboardMarkup:
     t = LANGUAGES[lang]["menu"]
     keyboard = [
         [InlineKeyboardButton(t["search"], callback_data="search")],
@@ -294,11 +322,13 @@ def main_menu_keyboard(lang="uk"):
     ]
     return InlineKeyboardMarkup(keyboard)
 
-def back_to_menu_keyboard(lang="uk"):
+
+def back_to_menu_keyboard(lang: str = "uk") -> InlineKeyboardMarkup:
     t = LANGUAGES[lang]["menu"]
     return InlineKeyboardMarkup([[InlineKeyboardButton(t["back"], callback_data="menu")]])
 
-def language_menu_keyboard():
+
+def language_menu_keyboard() -> InlineKeyboardMarkup:
     keyboard = [
         [InlineKeyboardButton("English", callback_data="lang_en")],
         [InlineKeyboardButton("Deutsch", callback_data="lang_de")],
@@ -310,81 +340,164 @@ def language_menu_keyboard():
     ]
     return InlineKeyboardMarkup(keyboard)
 
-# --- Обробка команд ---
-async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    lang = context.user_data.get("lang", "uk")
-    await update.message.reply_text(
-        LANGUAGES[lang]["start"],
-        reply_markup=main_menu_keyboard(lang)
-    )
 
-def clean(value):
-    if pd.isna(value) or str(value).strip() == "":
+# ====== Допоміжні ======
+def get_lang(context: ContextTypes.DEFAULT_TYPE) -> str:
+    return context.user_data.get("lang", "uk")
+
+
+def clean(value) -> str:
+    if pd.isna(value) or str(value).strip() == "" or str(value).lower() == "nan":
         return "---"
     return str(value)
 
-# --- Обробка кнопок ---
+
+# Формування тексту одного запису
+def render_result(row: pd.Series, lang: str = "uk") -> str:
+    labels = LANGUAGES[lang]["labels"]
+    return (
+        f"{labels['article']} {clean(row.get('Article', ''))}\n"
+        f"{labels['version']} {clean(row.get('Version', ''))}\n"
+        f"{labels['dataset']} {clean(row.get('Dataset', ''))}\n"
+        f"{labels['model']} {clean(row.get('Model', ''))}\n"
+        f"{labels['year']} {clean(row.get('Year', ''))}\n"
+        f"{labels['region']} {clean(row.get('Region', ''))}"
+    )
+
+
+def results_nav_keyboard(lang: str, page: int, total: int) -> InlineKeyboardMarkup:
+    nav = LANGUAGES[lang]["nav"]
+    keyboard = []
+    row = []
+    if page > 0:
+        row.append(InlineKeyboardButton(nav["prev"], callback_data=f"res_{page-1}"))
+    if page < total - 1:
+        row.append(InlineKeyboardButton(nav["next"], callback_data=f"res_{page+1}"))
+    if row:
+        keyboard.append(row)
+    keyboard.append([InlineKeyboardButton(nav["main"], callback_data="menu")])
+    return InlineKeyboardMarkup(keyboard)
+
+
+# ====== Хендлери ======
+async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    lang = get_lang(context)
+    await update.message.reply_text(LANGUAGES[lang]["start"], reply_markup=main_menu_keyboard(lang))
+
+
 async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
-    lang = context.user_data.get("lang", "uk")
+    lang = get_lang(context)
     await query.answer()
 
-    if query.data == "language":
-        await query.message.reply_text(LANGUAGES[lang]["choose_lang"], reply_markup=language_menu_keyboard())
+    data = query.data or ""
 
-    elif query.data.startswith("lang_"):
-        lang = query.data.split("_")[1]
-        context.user_data["lang"] = lang
+    # Пагінація результатів: res_<page_index>
+    if data.startswith("res_"):
+        try:
+            page = int(data.split("_")[1])
+        except Exception:
+            return
+
+        results: pd.DataFrame = context.user_data.get("search_results")
+        if results is None or results.empty:
+            # Нема результатів — повертаємось у меню
+            await query.message.edit_text(LANGUAGES[lang]["not_found"], reply_markup=main_menu_keyboard(lang))
+            return
+
+        total = len(results)
+        if 0 <= page < total:
+            context.user_data["page"] = page
+            row = results.iloc[page]
+            text = render_result(row, lang) + f"\n\n{LANGUAGES[lang]['page_info'].format(cur=page+1, total=total)}"
+            await query.message.edit_text(text, reply_markup=results_nav_keyboard(lang, page, total))
+        return
+
+    # Меню вибору мови
+    if data == "language":
+        await query.message.reply_text(LANGUAGES[lang]["choose_lang"], reply_markup=language_menu_keyboard())
+        return
+
+    # Зміна мови: lang_<code>
+    if data.startswith("lang_"):
+        new_lang = data.split("_", 1)[1]
+        if new_lang in LANGUAGES:
+            context.user_data["lang"] = new_lang
+            lang = new_lang
         await query.message.reply_text(
             LANGUAGES[lang]["changed"].format(lang=LANGUAGES[lang]["name"]),
             reply_markup=main_menu_keyboard(lang)
         )
+        return
 
-    elif query.data == "search":
+    # Пошук
+    if data == "search":
         await query.message.reply_text(LANGUAGES[lang]["enter_search"])
+        return
 
-    elif query.data == "contacts":
+    # Контакти
+    if data == "contacts":
         await query.message.reply_text(LANGUAGES[lang]["contacts"], reply_markup=back_to_menu_keyboard(lang))
+        return
 
-    elif query.data == "help":
+    # Довідка
+    if data == "help":
         await query.message.reply_text(LANGUAGES[lang]["help"], reply_markup=back_to_menu_keyboard(lang))
+        return
 
-    elif query.data == "menu":
+    # Повернення в меню
+    if data == "menu":
         await query.message.reply_text(LANGUAGES[lang]["back_menu"], reply_markup=main_menu_keyboard(lang))
         await query.message.reply_text(LANGUAGES[lang]["start"], reply_markup=main_menu_keyboard(lang))
+        return
 
-# --- Пошук ---
+
 async def search_database(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    lang = context.user_data.get("lang", "uk")
-    query = update.message.text.strip()
+    lang = get_lang(context)
+    text = (update.message.text or "").strip()
 
-    if not query:
+    if not text:
         await update.message.reply_text(LANGUAGES[lang]["empty_query"])
         return
-    if len(query) < 3:
+    if len(text) < 3:
         await update.message.reply_text(LANGUAGES[lang]["short_query"])
         return
 
-    mask = (
-        df['Article'].str.contains(query, case=False, na=False) |
-        df['Dataset'].str.contains(query, case=False, na=False)
-    )
-    results = df[mask]
+    # Маска пошуку по Article або Dataset
+    try:
+        mask = (
+            df["Article"].str.contains(text, case=False, na=False) |
+            df["Dataset"].str.contains(text, case=False, na=False)
+        )
+    except Exception:
+        mask = pd.Series([False] * len(df), index=df.index)
+
+    results = df[mask].reset_index(drop=True)
 
     if not results.empty:
         context.user_data["search_results"] = results
-        await update.message.reply_text(LANGUAGES[lang]["search_ok"], reply_markup=main_menu_keyboard(lang))
+        context.user_data["page"] = 0
+        row = results.iloc[0]
+        text_msg = LANGUAGES[lang]["search_ok"] + "\n\n" + render_result(row, lang)
+        await update.message.reply_text(
+            text_msg,
+            reply_markup=results_nav_keyboard(lang, 0, len(results))
+        )
     else:
         await update.message.reply_text(LANGUAGES[lang]["not_found"], reply_markup=main_menu_keyboard(lang))
 
-# --- Запуск ---
+
+# ====== Запуск приложения ======
 def main():
+    if not TOKEN:
+        raise RuntimeError("BOT_TOKEN is not set. Please set environment variable BOT_TOKEN.")
+
     app = Application.builder().token(TOKEN).build()
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CallbackQueryHandler(button))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, search_database))
     app.run_polling()
 
+
 if __name__ == "__main__":
     main()
-    
