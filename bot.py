@@ -1,46 +1,34 @@
+
+# multilang_bot_ready.py
+
 import os
 import pandas as pd
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Application, CommandHandler, CallbackQueryHandler, MessageHandler, filters, ContextTypes
 
-# ====== Налаштування токена ======
-# Задай BOT_TOKEN у змінних оточення (наприклад, у Fly.io secrets або локально)
 TOKEN = os.getenv("BOT_TOKEN")
 
-
-# ====== Завантаження даних ======
 def load_dataframe(path: str = "data.xlsx") -> pd.DataFrame:
     try:
         df = pd.read_excel(path)
-    except Exception as e:
-        # Порожня таблиця як fallback, щоб бот не падав
+    except Exception:
         df = pd.DataFrame(columns=["Article", "Version", "Dataset", "Model", "Year", "Region"])
-
-    # Гарантуємо наявність потрібних колонок
     for col in ["Article", "Version", "Dataset", "Model", "Year", "Region"]:
         if col not in df.columns:
             df[col] = ""
-
-    # Перетворюємо Year у int, якщо можливо
     try:
         df["Year"] = df["Year"].apply(lambda x: int(x) if pd.notna(x) and str(x).strip() != "" else "")
     except Exception:
         pass
-
-    # Всі текстові — в str
     for col in ["Article", "Version", "Dataset", "Model", "Region"]:
         try:
             df[col] = df[col].astype(str)
         except Exception:
             pass
-
     return df
-
 
 df = load_dataframe("data.xlsx")
 
-
-# ====== Словник перекладів (7 мов) ======
 LANGUAGES = {
     "uk": {
         "name": "Українська",
@@ -64,8 +52,7 @@ LANGUAGES = {
         "nav": {
             "prev": "⬅️ Назад",
             "next": "➡️ Далі",
-            "main": "🏠 Головне меню",
-            "contacts": "📞 Контакти"
+            "main": "🏠 Головне меню"
         },
         "help": "ℹ️ Довідка:\nЦей телеграм-бот створений для швидкого пошуку датасетів у нашій базі даних.\nДля пошуку просто введіть артикул блоку управління або назву датасету",
         "contacts": "📞 Контакти:\nEmail: datenflash@proton.me\nTelegram: @mukich1 або @mr_muhich\nInstagram: @codiVAG",
@@ -76,9 +63,8 @@ LANGUAGES = {
         "empty_query": "⚠️ Ви нічого не ввели. Спробуйте ще раз ⤵️",
         "short_query": "⚠️ Запит занадто короткий. Введіть мінімум 3 символи ⤵️",
         "back_menu": "🏠 Ви повернулися в головне меню.",
-        "page": "📖 _Сторінка {cur} з {total}_",
         "search_ok": "✅ Знайдено результати!",
-        "page_info": "📖 Ви на сторінці {cur} з {total}"
+        "page_info": "📖 Сторінка {cur} з {total}"
     },
     "en": {
         "name": "English",
@@ -102,8 +88,7 @@ LANGUAGES = {
         "nav": {
             "prev": "⬅️ Prev",
             "next": "➡️ Next",
-            "main": "🏠 Main menu",
-            "contacts": "📞 Contacts"
+            "main": "🏠 Main menu"
         },
         "help": "ℹ️ Help:\nThis Telegram bot is designed for quick dataset search in our database.\nTo search, simply enter the control unit article number or dataset name",
         "contacts": "📞 Contacts:\nEmail: datenflash@proton.me\nTelegram: @mukich1 or @mr_muhich\nInstagram: @codiVAG",
@@ -114,9 +99,8 @@ LANGUAGES = {
         "empty_query": "⚠️ You didn't type anything. Try again ⤵️",
         "short_query": "⚠️ Query too short. Please enter at least 3 characters ⤵️",
         "back_menu": "🏠 You returned to the main menu.",
-        "page": "📖 _Page {cur} of {total}_",
         "search_ok": "✅ Results found!",
-        "page_info": "📖 You are on page {cur} of {total}"
+        "page_info": "📖 Page {cur} of {total}"
     },
     "de": {
         "name": "Deutsch",
@@ -140,8 +124,7 @@ LANGUAGES = {
         "nav": {
             "prev": "⬅️ Zurück",
             "next": "➡️ Weiter",
-            "main": "🏠 Hauptmenü",
-            "contacts": "📞 Kontakte"
+            "main": "🏠 Hauptmenü"
         },
         "help": "ℹ️ Hilfe:\nDieser Telegram-Bot wurde für die schnelle Suche von Datensätzen in unserer Datenbank entwickelt.\nZur Suche geben Sie einfach die Artikelnummer oder den Datensatznamen ein",
         "contacts": "📞 Kontakte:\nEmail: datenflash@proton.me\nTelegram: @mukich1 oder @mr_muhich\nInstagram: @codiVAG",
@@ -152,9 +135,8 @@ LANGUAGES = {
         "empty_query": "⚠️ Sie haben nichts eingegeben. Bitte erneut versuchen ⤵️",
         "short_query": "⚠️ Anfrage zu kurz. Bitte mindestens 3 Zeichen eingeben ⤵️",
         "back_menu": "🏠 Sie sind ins Hauptmenü zurückgekehrt.",
-        "page": "📖 _Seite {cur} von {total}_",
         "search_ok": "✅ Ergebnisse gefunden!",
-        "page_info": "📖 Sie sind auf Seite {cur} von {total}"
+        "page_info": "📖 Seite {cur} von {total}"
     },
     "fr": {
         "name": "Français",
@@ -178,8 +160,7 @@ LANGUAGES = {
         "nav": {
             "prev": "⬅️ Précédent",
             "next": "➡️ Suivant",
-            "main": "🏠 Menu principal",
-            "contacts": "📞 Contacts"
+            "main": "🏠 Menu principal"
         },
         "help": "ℹ️ Aide:\nCe bot Telegram est conçu pour la recherche rapide de jeux de données dans notre base.\nPour rechercher, entrez simplement le numéro de l’article ou le nom du dataset",
         "contacts": "📞 Contacts:\nEmail: datenflash@proton.me\nTelegram: @mukich1 ou @mr_muhich\nInstagram: @codiVAG",
@@ -190,9 +171,8 @@ LANGUAGES = {
         "empty_query": "⚠️ Vous n’avez rien saisi. Essayez encore ⤵️",
         "short_query": "⚠️ Requête trop courte. Entrez au moins 3 caractères ⤵️",
         "back_menu": "🏠 Vous êtes retourné au menu principal.",
-        "page": "📖 _Page {cur} sur {total}_",
         "search_ok": "✅ Résultats trouvés!",
-        "page_info": "📖 Vous êtes sur la page {cur} sur {total}"
+        "page_info": "📖 Page {cur} sur {total}"
     },
     "es": {
         "name": "Español",
@@ -216,8 +196,7 @@ LANGUAGES = {
         "nav": {
             "prev": "⬅️ Anterior",
             "next": "➡️ Siguiente",
-            "main": "🏠 Menú principal",
-            "contacts": "📞 Contactos"
+            "main": "🏠 Menú principal"
         },
         "help": "ℹ️ Ayuda:\nEste bot de Telegram está diseñado para la búsqueda rápida de conjuntos de datos en nuestra base de datos.\nPara buscar, simplemente ingrese el número de artículo o el nombre del dataset",
         "contacts": "📞 Contactos:\nEmail: datenflash@proton.me\nTelegram: @mukich1 o @mr_muhich\nInstagram: @codiVAG",
@@ -228,9 +207,8 @@ LANGUAGES = {
         "empty_query": "⚠️ No escribiste nada. Intenta de nuevo ⤵️",
         "short_query": "⚠️ Consulta demasiado corta. Escribe al menos 3 caracteres ⤵️",
         "back_menu": "🏠 Has vuelto al menú principal.",
-        "page": "📖 _Página {cur} de {total}_",
         "search_ok": "✅ ¡Resultados encontrados!",
-        "page_info": "📖 Estás en la página {cur} de {total}"
+        "page_info": "📖 Página {cur} de {total}"
     },
     "it": {
         "name": "Italiano",
@@ -254,8 +232,7 @@ LANGUAGES = {
         "nav": {
             "prev": "⬅️ Indietro",
             "next": "➡️ Avanti",
-            "main": "🏠 Menu principale",
-            "contacts": "📞 Contatti"
+            "main": "🏠 Menu principale"
         },
         "help": "ℹ️ Guida:\nQuesto bot Telegram è stato creato per cercare rapidamente dataset nel nostro database.\nPer cercare, inserisci semplicemente il numero dell’articolo o il nome del dataset",
         "contacts": "📞 Contatti:\nEmail: datenflash@proton.me\nTelegram: @mukich1 o @mr_muhich\nInstagram: @codiVAG",
@@ -266,9 +243,8 @@ LANGUAGES = {
         "empty_query": "⚠️ Non hai digitato nulla. Riprova ⤵️",
         "short_query": "⚠️ Query troppo corta. Inserisci almeno 3 caratteri ⤵️",
         "back_menu": "🏠 Sei tornato al menu principale.",
-        "page": "📖 _Pagina {cur} di {total}_",
         "search_ok": "✅ Risultati trovati!",
-        "page_info": "📖 Sei a pagina {cur} di {total}"
+        "page_info": "📖 Pagina {cur} di {total}"
     },
     "pt": {
         "name": "Português",
@@ -292,8 +268,7 @@ LANGUAGES = {
         "nav": {
             "prev": "⬅️ Anterior",
             "next": "➡️ Próximo",
-            "main": "🏠 Menu principal",
-            "contacts": "📞 Contatos"
+            "main": "🏠 Menu principal"
         },
         "help": "ℹ️ Ajuda:\nEste bot do Telegram foi criado para pesquisa rápida de conjuntos de dados no nosso banco de dados.\nPara pesquisar, basta inserir o número do artigo ou o nome do dataset",
         "contacts": "📞 Contatos:\nEmail: datenflash@proton.me\nTelegram: @mukich1 ou @mr_muhich\nInstagram: @codiVAG",
@@ -304,15 +279,12 @@ LANGUAGES = {
         "empty_query": "⚠️ Você não digitou nada. Tente novamente ⤵️",
         "short_query": "⚠️ Consulta muito curta. Digite pelo menos 3 caracteres ⤵️",
         "back_menu": "🏠 Você voltou ao menu principal.",
-        "page": "📖 _Página {cur} de {total}_",
         "search_ok": "✅ Resultados encontrados!",
-        "page_info": "📖 Você está na página {cur} de {total}"
+        "page_info": "📖 Página {cur} de {total}"
     }
-}
+}  # ⚠️ вставити повний словник з 7 мовами
 
-
-# ====== Побудова меню ======
-def main_menu_keyboard(lang: str = "uk") -> InlineKeyboardMarkup:
+def main_menu_keyboard(lang="uk"):
     t = LANGUAGES[lang]["menu"]
     keyboard = [
         [InlineKeyboardButton(t["search"], callback_data="search")],
@@ -322,13 +294,11 @@ def main_menu_keyboard(lang: str = "uk") -> InlineKeyboardMarkup:
     ]
     return InlineKeyboardMarkup(keyboard)
 
-
-def back_to_menu_keyboard(lang: str = "uk") -> InlineKeyboardMarkup:
+def back_to_menu_keyboard(lang="uk"):
     t = LANGUAGES[lang]["menu"]
     return InlineKeyboardMarkup([[InlineKeyboardButton(t["back"], callback_data="menu")]])
 
-
-def language_menu_keyboard() -> InlineKeyboardMarkup:
+def language_menu_keyboard():
     keyboard = [
         [InlineKeyboardButton("English", callback_data="lang_en")],
         [InlineKeyboardButton("Deutsch", callback_data="lang_de")],
@@ -340,164 +310,125 @@ def language_menu_keyboard() -> InlineKeyboardMarkup:
     ]
     return InlineKeyboardMarkup(keyboard)
 
-
-# ====== Допоміжні ======
 def get_lang(context: ContextTypes.DEFAULT_TYPE) -> str:
     return context.user_data.get("lang", "uk")
 
-
-def clean(value) -> str:
+def clean(value):
     if pd.isna(value) or str(value).strip() == "" or str(value).lower() == "nan":
         return "---"
     return str(value)
 
-
-# Формування тексту одного запису
-def render_result(row: pd.Series, lang: str = "uk") -> str:
+def render_result(row, lang="uk"):
     labels = LANGUAGES[lang]["labels"]
     return (
-        f"{labels['article']} {clean(row.get('Article', ''))}\n"
-        f"{labels['version']} {clean(row.get('Version', ''))}\n"
-        f"{labels['dataset']} {clean(row.get('Dataset', ''))}\n"
-        f"{labels['model']} {clean(row.get('Model', ''))}\n"
-        f"{labels['year']} {clean(row.get('Year', ''))}\n"
-        f"{labels['region']} {clean(row.get('Region', ''))}"
+        f"{labels['article']} {clean(row['Article'])}\n"
+        f"{labels['version']} {clean(row['Version'])}\n"
+        f"{labels['dataset']} {clean(row['Dataset'])}\n"
+        f"{labels['model']} {clean(row['Model'])}\n"
+        f"{labels['year']} {clean(row['Year'])}\n"
+        f"{labels['region']} {clean(row['Region'])}"
     )
 
+def render_page(results: pd.DataFrame, page: int, lang="uk", per_page: int = 5) -> str:
+    start = page * per_page
+    end = min(start + per_page, len(results))
+    subset = results.iloc[start:end]
+    parts = []
+    for i, (_, row) in enumerate(subset.iterrows(), start=start+1):
+        parts.append(f"🔹 *{i}*\n{render_result(row, lang)}")
+    text = "\n\n".join(parts)
+    total_pages = (len(results) + per_page - 1) // per_page
+    text += f"\n\n{LANGUAGES[lang]['page_info'].format(cur=page+1, total=total_pages)}"
+    return text
 
-def results_nav_keyboard(lang: str, page: int, total: int) -> InlineKeyboardMarkup:
+def results_nav_keyboard(lang, page, total_items, per_page: int = 5):
+    total_pages = (total_items + per_page - 1) // per_page
     nav = LANGUAGES[lang]["nav"]
     keyboard = []
     row = []
     if page > 0:
         row.append(InlineKeyboardButton(nav["prev"], callback_data=f"res_{page-1}"))
-    if page < total - 1:
+    if page < total_pages - 1:
         row.append(InlineKeyboardButton(nav["next"], callback_data=f"res_{page+1}"))
     if row:
         keyboard.append(row)
     keyboard.append([InlineKeyboardButton(nav["main"], callback_data="menu")])
     return InlineKeyboardMarkup(keyboard)
 
-
-# ====== Хендлери ======
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     lang = get_lang(context)
     await update.message.reply_text(LANGUAGES[lang]["start"], reply_markup=main_menu_keyboard(lang))
-
 
 async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     lang = get_lang(context)
     await query.answer()
+    data = query.data
 
-    data = query.data or ""
-
-    # Пагінація результатів: res_<page_index>
     if data.startswith("res_"):
-        try:
-            page = int(data.split("_")[1])
-        except Exception:
-            return
-
-        results: pd.DataFrame = context.user_data.get("search_results")
-        if results is None or results.empty:
-            # Нема результатів — повертаємось у меню
-            await query.message.edit_text(LANGUAGES[lang]["not_found"], reply_markup=main_menu_keyboard(lang))
-            return
-
-        total = len(results)
-        if 0 <= page < total:
+        page = int(data.split("_")[1])
+        results = context.user_data.get("search_results")
+        if results is not None and not results.empty:
             context.user_data["page"] = page
-            row = results.iloc[page]
-            text = render_result(row, lang) + f"\n\n{LANGUAGES[lang]['page_info'].format(cur=page+1, total=total)}"
-            await query.message.edit_text(text, reply_markup=results_nav_keyboard(lang, page, total))
+            page_text = render_page(results, page, lang)
+            await query.message.edit_text(
+                page_text,
+                reply_markup=results_nav_keyboard(lang, page, len(results))
+            )
         return
 
-    # Меню вибору мови
     if data == "language":
         await query.message.reply_text(LANGUAGES[lang]["choose_lang"], reply_markup=language_menu_keyboard())
-        return
-
-    # Зміна мови: lang_<code>
-    if data.startswith("lang_"):
-        new_lang = data.split("_", 1)[1]
-        if new_lang in LANGUAGES:
-            context.user_data["lang"] = new_lang
-            lang = new_lang
+    elif data.startswith("lang_"):
+        lang = data.split("_")[1]
+        context.user_data["lang"] = lang
         await query.message.reply_text(
             LANGUAGES[lang]["changed"].format(lang=LANGUAGES[lang]["name"]),
             reply_markup=main_menu_keyboard(lang)
         )
-        return
-
-    # Пошук
-    if data == "search":
+    elif data == "search":
         await query.message.reply_text(LANGUAGES[lang]["enter_search"])
-        return
-
-    # Контакти
-    if data == "contacts":
+    elif data == "contacts":
         await query.message.reply_text(LANGUAGES[lang]["contacts"], reply_markup=back_to_menu_keyboard(lang))
-        return
-
-    # Довідка
-    if data == "help":
+    elif data == "help":
         await query.message.reply_text(LANGUAGES[lang]["help"], reply_markup=back_to_menu_keyboard(lang))
-        return
-
-    # Повернення в меню
-    if data == "menu":
+    elif data == "menu":
         await query.message.reply_text(LANGUAGES[lang]["back_menu"], reply_markup=main_menu_keyboard(lang))
         await query.message.reply_text(LANGUAGES[lang]["start"], reply_markup=main_menu_keyboard(lang))
-        return
-
 
 async def search_database(update: Update, context: ContextTypes.DEFAULT_TYPE):
     lang = get_lang(context)
     text = (update.message.text or "").strip()
-
     if not text:
         await update.message.reply_text(LANGUAGES[lang]["empty_query"])
         return
     if len(text) < 3:
         await update.message.reply_text(LANGUAGES[lang]["short_query"])
         return
-
-    # Маска пошуку по Article або Dataset
-    try:
-        mask = (
-            df["Article"].str.contains(text, case=False, na=False) |
-            df["Dataset"].str.contains(text, case=False, na=False)
-        )
-    except Exception:
-        mask = pd.Series([False] * len(df), index=df.index)
-
+    mask = (
+        df["Article"].str.contains(text, case=False, na=False) |
+        df["Dataset"].str.contains(text, case=False, na=False)
+    )
     results = df[mask].reset_index(drop=True)
-
     if not results.empty:
         context.user_data["search_results"] = results
         context.user_data["page"] = 0
-        row = results.iloc[0]
-        text_msg = LANGUAGES[lang]["search_ok"] + "\n\n" + render_result(row, lang)
+        page_text = render_page(results, 0, lang)
         await update.message.reply_text(
-            text_msg,
+            LANGUAGES[lang]["search_ok"] + "\n\n" + page_text,
             reply_markup=results_nav_keyboard(lang, 0, len(results))
         )
     else:
         await update.message.reply_text(LANGUAGES[lang]["not_found"], reply_markup=main_menu_keyboard(lang))
 
-
-# ====== Запуск приложения ======
 def main():
     if not TOKEN:
-        raise RuntimeError("BOT_TOKEN is not set. Please set environment variable BOT_TOKEN.")
-
+        raise RuntimeError("BOT_TOKEN is not set")
     app = Application.builder().token(TOKEN).build()
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CallbackQueryHandler(button))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, search_database))
     app.run_polling()
-
 
 if __name__ == "__main__":
     main()
