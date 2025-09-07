@@ -421,6 +421,43 @@ async def search_database(update: Update, context: ContextTypes.DEFAULT_TYPE):
     else:
         await update.message.reply_text(LANGUAGES[lang]["not_found"], reply_markup=main_menu_keyboard(lang))
 
+# Логування статистики
+    if "stats" not in context.application_data:
+        context.application_data["stats"] = {"total":0,"success":0,"fail":0,"queries":Counter(),"by_lang":Counter()}
+    stats = context.application_data["stats"]
+    stats["total"] += 1
+    stats["by_lang"][lang] += 1
+    stats["queries"][text.lower()] += 1
+
+    mask = df["Article"].str.contains(text, case=False, na=False)
+    results = df[mask].reset_index(drop=True)
+    if not results.empty:
+        stats["success"] += 1
+        context.user_data["search_results"] = results
+        context.user_data["page"] = 0
+        page_text = render_page(results, 0, lang)
+        await update.message.reply_text("✅ Знайдено результати!\n\n"+page_text, reply_markup=results_nav_keyboard(lang,0,len(results)))
+    else:
+        stats["fail"] += 1
+        await update.message.reply_text("⚠️ Нічого не знайдено.")
+
+async def stats(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    stats = context.application_data.get("stats", {})
+    if not stats:
+        await update.message.reply_text("Статистика ще порожня 📊")
+        return
+    msg = (
+        f"📊 *Статистика пошуку:*\n"
+        f"🔎 Всього пошуків: {stats['total']}\n"
+        f"✅ Успішних: {stats['success']}\n"
+        f"⚠️ Неуспішних: {stats['fail']}\n\n"
+        f"🌐 За мовами: {dict(stats['by_lang'])}\n\n"
+        f"🔥 Топ-5 запитів:\n"
+    )
+    for query, count in stats['queries'].most_common(5):
+        msg += f"   • {query} — {count}\n"
+    await update.message.reply_text(msg, parse_mode="Markdown")
+
 def main():
     if not TOKEN:
         raise RuntimeError("BOT_TOKEN is not set")
