@@ -1,6 +1,4 @@
 
-# multilang_bot_ready.py
-
 import os
 import pandas as pd
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
@@ -441,10 +439,34 @@ async def search_database(update: Update, context: ContextTypes.DEFAULT_TYPE):
         stats["fail"] += 1
         await update.message.reply_text("⚠️ Нічого не знайдено.")
 
+
 async def stats(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    stats = context.application_data.get("stats", {})
+    stats = context.application_data.get("stats")
     if not stats:
-        await update.message.reply_text("Статистика ще порожня 📊")
+        await update.message.reply_text("📊 Статистика ще порожня")
+        return
+
+    msg = (
+        f"📊 Статистика пошуку:
+"
+        f"🔎 Всього пошуків: {stats['total']}
+"
+        f"✅ Успішних: {stats['success']}
+"
+        f"⚠️ Неуспішних: {stats['fail']}
+
+"
+        f"🌐 За мовами: {dict(stats['by_lang'])}
+
+"
+        f"🔥 Топ-5 запитів:
+"
+    )
+    for query, count in stats['queries'].most_common(5):
+        msg += f"   • {query} — {count}
+"
+
+    await update.message.reply_text(msg)
         return
     msg = (
         f"📊 *Статистика пошуку:*\n"
