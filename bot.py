@@ -1,6 +1,7 @@
-
 import os
+import io
 import pandas as pd
+from collections import Counter
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Application, CommandHandler, CallbackQueryHandler, MessageHandler, filters, ContextTypes
 
@@ -27,6 +28,7 @@ def load_dataframe(path: str = "all-in-one.xlsx") -> pd.DataFrame:
 
 df = load_dataframe("all-in-one.xlsx")
 
+# ------------------ Мовний словник ------------------
 LANGUAGES = {
     "uk": {
         "name": "Українська",
@@ -282,6 +284,7 @@ LANGUAGES = {
     }
 }  # ⚠️ вставити повний словник з 7 мовами
 
+# ------------------ Клавіатури ------------------
 def main_menu_keyboard(lang="uk"):
     t = LANGUAGES[lang]["menu"]
     keyboard = [
@@ -308,6 +311,7 @@ def language_menu_keyboard():
     ]
     return InlineKeyboardMarkup(keyboard)
 
+# ------------------ Сервісні функції ------------------
 def get_lang(context: ContextTypes.DEFAULT_TYPE) -> str:
     return context.user_data.get("lang", "uk")
 
@@ -353,6 +357,7 @@ def results_nav_keyboard(lang, page, total_items, per_page: int = 5):
     keyboard.append([InlineKeyboardButton(nav["main"], callback_data="menu")])
     return InlineKeyboardMarkup(keyboard)
 
+# ------------------ Основні хендлери ------------------
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     lang = get_lang(context)
     await update.message.reply_text(LANGUAGES[lang]["start"], reply_markup=main_menu_keyboard(lang))
@@ -394,6 +399,7 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await query.message.reply_text(LANGUAGES[lang]["back_menu"], reply_markup=main_menu_keyboard(lang))
         await query.message.reply_text(LANGUAGES[lang]["start"], reply_markup=main_menu_keyboard(lang))
 
+# ------------------ Пошук + статистика ------------------
 async def search_database(update: Update, context: ContextTypes.DEFAULT_TYPE):
     lang = get_lang(context)
     text = (update.message.text or "").strip()
@@ -403,12 +409,31 @@ async def search_database(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if len(text) < 3:
         await update.message.reply_text(LANGUAGES[lang]["short_query"])
         return
+
     mask = (
         df["Article"].str.contains(text, case=False, na=False) |
         df["Dataset"].str.contains(text, case=False, na=False)
     )
     results = df[mask].reset_index(drop=True)
+
+    if "stats" not in context.application_data:
+        context.application_data["stats"] = {
+            "total": 0,
+            "success": 0,
+            "fail": 0,
+            "queries": Counter(),
+            "by_lang": Counter(),
+            "success_list": [],
+            "fail_list": []
+        }
+    stats = context.application_data["stats"]
+    stats["total"] += 1
+    stats["by_lang"][lang] += 1
+    stats["queries"][text.lower()] += 1
+
     if not results.empty:
+        stats["success"] += 1
+        stats["success_list"].append(text)
         context.user_data["search_results"] = results
         context.user_data["page"] = 0
         page_text = render_page(results, 0, lang)
@@ -417,51 +442,74 @@ async def search_database(update: Update, context: ContextTypes.DEFAULT_TYPE):
             reply_markup=results_nav_keyboard(lang, 0, len(results))
         )
     else:
+        stats["fail"] += 1
+        stats["fail_list"].append(text)
         await update.message.reply_text(LANGUAGES[lang]["not_found"], reply_markup=main_menu_keyboard(lang))
 
-# Логування статистики
-    if "stats" not in context.application_data:
-        context.application_data["stats"] = {"total":0,"success":0,"fail":0,"queries":Counter(),"by_lang":Counter()}
-    stats = context.application_data["stats"]
-    stats["total"] += 1
-    stats["by_lang"][lang] += 1
-    stats["queries"][text.lower()] += 1
-
-    mask = df["Article"].str.contains(text, case=False, na=False)
-    results = df[mask].reset_index(drop=True)
-    if not results.empty:
-        stats["success"] += 1
-        context.user_data["search_results"] = results
-        context.user_data["page"] = 0
-        page_text = render_page(results, 0, lang)
-        await update.message.reply_text("✅ Знайдено результати!\n\n"+page_text, reply_markup=results_nav_keyboard(lang,0,len(results)))
-    else:
-        stats["fail"] += 1
-        await update.message.reply_text("⚠️ Нічого не знайдено.")
-
+# ------------------ /stats ------------------
 async def stats(update: Update, context: ContextTypes.DEFAULT_TYPE):
     stats = context.application_data.get("stats", {})
     if not stats:
         await update.message.reply_text("Статистика ще порожня 📊")
         return
+
     msg = (
         f"📊 *Статистика пошуку:*\n"
         f"🔎 Всього пошуків: {stats['total']}\n"
         f"✅ Успішних: {stats['success']}\n"
         f"⚠️ Неуспішних: {stats['fail']}\n\n"
-        f"🌐 За мовами: {dict(stats['by_lang'])}\n\n"
-        f"🔥 Топ-5 запитів:\n"
+        f"🔥 Топ-10 запитів:\n"
     )
-    for query, count in stats['queries'].most_common(5):
+    for query, count in stats['queries'].most_common(10):
         msg += f"   • {query} — {count}\n"
-    await update.message.reply_text(msg, parse_mode="Markdown")
 
+    keyboard = [
+        [InlineKeyboardButton("⬇️ Експорт успішних (CSV)", callback_data="export_success_csv")],
+        [InlineKeyboardButton("⬇️ Експорт неуспішних (CSV)", callback_data="export_fail_csv")],
+        [InlineKeyboardButton("⬇️ Експорт успішних (Excel)", callback_data="export_success_xlsx")],
+        [InlineKeyboardButton("⬇️ Експорт неуспішних (Excel)", callback_data="export_fail_xlsx")]
+    ]
+
+    await update.message.reply_text(msg, parse_mode="Markdown",
+                                    reply_markup=InlineKeyboardMarkup(keyboard))
+
+# ------------------ Експорт ------------------
+async def export_data(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    await query.answer()
+    stats = context.application_data.get("stats", {})
+    if not stats:
+        await query.message.reply_text("Статистика ще порожня 📊")
+        return
+
+    data_type, file_type = query.data.split("_")[1], query.data.split("_")[2]
+    if data_type == "success":
+        data = stats["success_list"]
+    else:
+        data = stats["fail_list"]
+
+    df = pd.DataFrame(data, columns=["Query"])
+
+    bio = io.BytesIO()
+    if file_type == "csv":
+        df.to_csv(bio, index=False, encoding="utf-8-sig")
+        bio.name = f"{data_type}_queries.csv"
+    else:
+        df.to_excel(bio, index=False, engine="openpyxl")
+        bio.name = f"{data_type}_queries.xlsx"
+
+    bio.seek(0)
+    await query.message.reply_document(document=bio)
+
+# ------------------ main ------------------
 def main():
     if not TOKEN:
         raise RuntimeError("BOT_TOKEN is not set")
     app = Application.builder().token(TOKEN).build()
     app.add_handler(CommandHandler("start", start))
-    app.add_handler(CallbackQueryHandler(button))
+    app.add_handler(CommandHandler("stats", stats))
+    app.add_handler(CallbackQueryHandler(button, pattern="^(?!export_)"))
+    app.add_handler(CallbackQueryHandler(export_data, pattern="^export_"))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, search_database))
     app.run_polling()
 
