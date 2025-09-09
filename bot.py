@@ -25,7 +25,7 @@ def load_dataframe(path: str = "all-in-one.xlsx") -> pd.DataFrame:
             pass
     return df
 
-df = load_dataframe("data.xlsx")
+df = load_dataframe("all-in-one.xlsx")
 
 LANGUAGES = {
     "uk": {
@@ -467,4 +467,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
