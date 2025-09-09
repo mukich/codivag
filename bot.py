@@ -434,6 +434,7 @@ async def search_database(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not results.empty:
         stats["success"] += 1
         stats["success_list"].append(text)
+
         context.user_data["search_results"] = results
         context.user_data["page"] = 0
         page_text = render_page(results, 0, lang)
@@ -508,8 +509,8 @@ def main():
     app = Application.builder().token(TOKEN).build()
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("stats", stats))
-    app.add_handler(CallbackQueryHandler(button, pattern="^(?!export_)"))
     app.add_handler(CallbackQueryHandler(export_data, pattern="^export_"))
+    app.add_handler(CallbackQueryHandler(button))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, search_database))
     app.run_polling()
 
