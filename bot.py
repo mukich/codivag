@@ -6,7 +6,7 @@ from telegram.ext import Application, CommandHandler, CallbackQueryHandler, Mess
 
 TOKEN = os.getenv("BOT_TOKEN")
 
-def load_dataframe(path: str = "data.xlsx") -> pd.DataFrame:
+def load_dataframe(path: str = "all-in-one.xlsx") -> pd.DataFrame:
     try:
         df = pd.read_excel(path)
     except Exception:
@@ -467,3 +467,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
