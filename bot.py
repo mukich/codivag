@@ -455,16 +455,17 @@ async def search_database(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def stats_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Обробник команди /stats"""
+    lang = get_lang(context)
+    
     if not STATS["total"]:
-        await update.message.reply_text("📊 Статистика ще порожня")
+        await update.message.reply_text("📊 Статистика ще порожня", reply_markup=back_to_menu_keyboard(lang))
         return
     
     # Створення клавіатури для експорту
     keyboard = [
-        [InlineKeyboardButton("📊 Експорт успішних запитів (CSV)", callback_data="export_success_csv")],
-        [InlineKeyboardButton("📊 Експорт неуспішних запитів (CSV)", callback_data="export_fail_csv")],
         [InlineKeyboardButton("📈 Експорт успішних запитів (Excel)", callback_data="export_success_excel")],
-        [InlineKeyboardButton("📈 Експорт неуспішних запитів (Excel)", callback_data="export_fail_excel")]
+        [InlineKeyboardButton("📈 Експорт неуспішних запитів (Excel)", callback_data="export_fail_excel")],
+        [InlineKeyboardButton(LANGUAGES[lang]["menu"]["main"], callback_data="menu")]
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
     
@@ -487,10 +488,12 @@ async def stats_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     await update.message.reply_text(msg, parse_mode="Markdown", reply_markup=reply_markup)
 
-async def export_data(update: Update, context: ContextTypes.DEFAULT_TYPE, data_type: str, format_type: str):
-    """Експорт даних у CSV або Excel"""
+async def export_data(update: Update, context: ContextTypes.DEFAULT_TYPE, data_type: str):
+    """Експорт даних у Excel"""
     query = update.callback_query
     await query.answer()
+    
+    lang = get_lang(context)
     
     if data_type == "success":
         data = STATS["success_queries"]
@@ -502,37 +505,25 @@ async def export_data(update: Update, context: ContextTypes.DEFAULT_TYPE, data_t
         title = "Неуспішні запити"
     
     if not data:
-        await query.message.reply_text(f"⚠️ Немає даних для {title.lower()}")
+        await query.message.reply_text(f"⚠️ Немає даних для {title.lower()}", reply_markup=back_to_menu_keyboard(lang))
         return
     
     # Створення DataFrame
     df_export = pd.DataFrame(data)
     
-    if format_type == "csv":
-        # Експорт у CSV
-        csv_buffer = io.StringIO()
-        df_export.to_csv(csv_buffer, index=False)
-        csv_buffer.seek(0)
-        
-        await context.bot.send_document(
-            chat_id=query.message.chat_id,
-            document=io.BytesIO(csv_buffer.getvalue().encode()),
-            filename=f"{filename}.csv",
-            caption=f"📊 {title} (CSV)"
-        )
-    else:
-        # Експорт у Excel
-        excel_buffer = io.BytesIO()
-        with pd.ExcelWriter(excel_buffer, engine='openpyxl') as writer:
-            df_export.to_excel(writer, index=False, sheet_name=title)
-        excel_buffer.seek(0)
-        
-        await context.bot.send_document(
-            chat_id=query.message.chat_id,
-            document=excel_buffer,
-            filename=f"{filename}.xlsx",
-            caption=f"📈 {title} (Excel)"
-        )
+    # Експорт у Excel
+    excel_buffer = io.BytesIO()
+    with pd.ExcelWriter(excel_buffer, engine='openpyxl') as writer:
+        df_export.to_excel(writer, index=False, sheet_name=title)
+    excel_buffer.seek(0)
+    
+    await context.bot.send_document(
+        chat_id=query.message.chat_id,
+        document=excel_buffer,
+        filename=f"{filename}.xlsx",
+        caption=f"📈 {title} (Excel)",
+        reply_markup=back_to_menu_keyboard(lang)
+    )
 
 async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
@@ -553,14 +544,10 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
 
     # Обробка експорту даних
-    elif data == "export_success_csv":
-        await export_data(update, context, "success", "csv")
-    elif data == "export_fail_csv":
-        await export_data(update, context, "fail", "csv")
     elif data == "export_success_excel":
-        await export_data(update, context, "success", "excel")
+        await export_data(update, context, "success")
     elif data == "export_fail_excel":
-        await export_data(update, context, "fail", "excel")
+        await export_data(update, context, "fail")
 
     elif data == "language":
         await query.message.reply_text(LANGUAGES[lang]["choose_lang"], reply_markup=language_menu_keyboard())
