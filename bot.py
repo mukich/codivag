@@ -463,8 +463,8 @@ async def stats_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     # Створення клавіатури для експорту
     keyboard = [
-        [InlineKeyboardButton("📈 Експорт успішних запитів (Excel)", callback_data="export_success_excel")],
-        [InlineKeyboardButton("📈 Експорт неуспішних запитів (Excel)", callback_data="export_fail_excel")],
+        [InlineKeyboardButton("📈 Експорт успішних запитів", callback_data="export_success_excel")],
+        [InlineKeyboardButton("📉 Експорт неуспішних запитів", callback_data="export_fail_excel")],
         [InlineKeyboardButton(LANGUAGES[lang]["menu"]["main"], callback_data="menu")]
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
@@ -474,7 +474,7 @@ async def stats_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         f"📊 *Статистика пошуку:*\n\n"
         f"🔎 Всього пошуків: {STATS['total']}\n"
         f"✅ Успішних: {STATS['success']}\n"
-        f"⚠️ Неуспішних: {STATS['fail']}\n\n"
+        f"⛔️ Неуспішних: {STATS['fail']}\n\n"
         f"🌐 За мовами:\n"
     )
     
@@ -579,5 +579,6 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
