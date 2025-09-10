@@ -1,10 +1,21 @@
-
 import os
 import pandas as pd
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Application, CommandHandler, CallbackQueryHandler, MessageHandler, filters, ContextTypes
+from collections import Counter
+import io
 
 TOKEN = os.getenv("BOT_TOKEN")
+
+STATS = {
+    "total": 0,
+    "success": 0,
+    "fail": 0,
+    "queries": Counter(),
+    "by_lang": Counter(),
+    "success_queries": [],
+    "fail_queries": []
+}
 
 def load_dataframe(path: str = "all-in-one.xlsx") -> pd.DataFrame:
     try:
@@ -403,12 +414,28 @@ async def search_database(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if len(text) < 3:
         await update.message.reply_text(LANGUAGES[lang]["short_query"])
         return
+    
+    # Оновлення статистики
+    STATS["total"] += 1
+    STATS["by_lang"][lang] += 1
+    STATS["queries"][text.lower()] += 1
+
     mask = (
         df["Article"].str.contains(text, case=False, na=False) |
         df["Dataset"].str.contains(text, case=False, na=False)
     )
     results = df[mask].reset_index(drop=True)
+    
     if not results.empty:
+        # Успішний пошук
+        STATS["success"] += 1
+        STATS["success_queries"].append({
+            "query": text,
+            "lang": lang,
+            "timestamp": pd.Timestamp.now(),
+            "results_count": len(results)
+        })
+        
         context.user_data["search_results"] = results
         context.user_data["page"] = 0
         page_text = render_page(results, 0, lang)
@@ -417,50 +444,148 @@ async def search_database(update: Update, context: ContextTypes.DEFAULT_TYPE):
             reply_markup=results_nav_keyboard(lang, 0, len(results))
         )
     else:
+        # Неуспішний пошук
+        STATS["fail"] += 1
+        STATS["fail_queries"].append({
+            "query": text,
+            "lang": lang,
+            "timestamp": pd.Timestamp.now()
+        })
         await update.message.reply_text(LANGUAGES[lang]["not_found"], reply_markup=main_menu_keyboard(lang))
 
-# Логування статистики
-    if "stats" not in context.application_data:
-        context.application_data["stats"] = {"total":0,"success":0,"fail":0,"queries":Counter(),"by_lang":Counter()}
-    stats = context.application_data["stats"]
-    stats["total"] += 1
-    stats["by_lang"][lang] += 1
-    stats["queries"][text.lower()] += 1
-
-    mask = df["Article"].str.contains(text, case=False, na=False)
-    results = df[mask].reset_index(drop=True)
-    if not results.empty:
-        stats["success"] += 1
-        context.user_data["search_results"] = results
-        context.user_data["page"] = 0
-        page_text = render_page(results, 0, lang)
-        await update.message.reply_text("✅ Знайдено результати!\n\n"+page_text, reply_markup=results_nav_keyboard(lang,0,len(results)))
-    else:
-        stats["fail"] += 1
-        await update.message.reply_text("⚠️ Нічого не знайдено.")
-
-async def stats(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    stats = context.application_data.get("stats", {})
-    if not stats:
-        await update.message.reply_text("Статистика ще порожня 📊")
+async def stats_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Обробник команди /stats"""
+    if not STATS["total"]:
+        await update.message.reply_text("📊 Статистика ще порожня")
         return
+    
+    # Створення клавіатури для експорту
+    keyboard = [
+        [InlineKeyboardButton("📊 Експорт успішних запитів (CSV)", callback_data="export_success_csv")],
+        [InlineKeyboardButton("📊 Експорт неуспішних запитів (CSV)", callback_data="export_fail_csv")],
+        [InlineKeyboardButton("📈 Експорт успішних запитів (Excel)", callback_data="export_success_excel")],
+        [InlineKeyboardButton("📈 Експорт неуспішних запитів (Excel)", callback_data="export_fail_excel")]
+    ]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    
+    # Формування статистики
     msg = (
-        f"📊 *Статистика пошуку:*\n"
-        f"🔎 Всього пошуків: {stats['total']}\n"
-        f"✅ Успішних: {stats['success']}\n"
-        f"⚠️ Неуспішних: {stats['fail']}\n\n"
-        f"🌐 За мовами: {dict(stats['by_lang'])}\n\n"
-        f"🔥 Топ-5 запитів:\n"
+        f"📊 *Статистика пошуку:*\n\n"
+        f"🔎 Всього пошуків: {STATS['total']}\n"
+        f"✅ Успішних: {STATS['success']}\n"
+        f"⚠️ Неуспішних: {STATS['fail']}\n\n"
+        f"🌐 За мовами:\n"
     )
-    for query, count in stats['queries'].most_common(5):
-        msg += f"   • {query} — {count}\n"
-    await update.message.reply_text(msg, parse_mode="Markdown")
+    
+    for lang_code, count in STATS["by_lang"].items():
+        lang_name = LANGUAGES.get(lang_code, {}).get("name", lang_code)
+        msg += f"   • {lang_name}: {count}\n"
+    
+    msg += f"\n🔥 Топ-10 запитів:\n"
+    for query, count in STATS["queries"].most_common(10):
+        msg += f"   • `{query}` — {count}\n"
+    
+    await update.message.reply_text(msg, parse_mode="Markdown", reply_markup=reply_markup)
+
+async def export_data(update: Update, context: ContextTypes.DEFAULT_TYPE, data_type: str, format_type: str):
+    """Експорт даних у CSV або Excel"""
+    query = update.callback_query
+    await query.answer()
+    
+    if data_type == "success":
+        data = STATS["success_queries"]
+        filename = "successful_queries"
+        title = "Успішні запити"
+    else:
+        data = STATS["fail_queries"]
+        filename = "failed_queries"
+        title = "Неуспішні запити"
+    
+    if not data:
+        await query.message.reply_text(f"⚠️ Немає даних для {title.lower()}")
+        return
+    
+    # Створення DataFrame
+    df_export = pd.DataFrame(data)
+    
+    if format_type == "csv":
+        # Експорт у CSV
+        csv_buffer = io.StringIO()
+        df_export.to_csv(csv_buffer, index=False)
+        csv_buffer.seek(0)
+        
+        await context.bot.send_document(
+            chat_id=query.message.chat_id,
+            document=io.BytesIO(csv_buffer.getvalue().encode()),
+            filename=f"{filename}.csv",
+            caption=f"📊 {title} (CSV)"
+        )
+    else:
+        # Експорт у Excel
+        excel_buffer = io.BytesIO()
+        with pd.ExcelWriter(excel_buffer, engine='openpyxl') as writer:
+            df_export.to_excel(writer, index=False, sheet_name=title)
+        excel_buffer.seek(0)
+        
+        await context.bot.send_document(
+            chat_id=query.message.chat_id,
+            document=excel_buffer,
+            filename=f"{filename}.xlsx",
+            caption=f"📈 {title} (Excel)"
+        )
+
+async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    lang = get_lang(context)
+    await query.answer()
+    data = query.data
+
+    if data.startswith("res_"):
+        page = int(data.split("_")[1])
+        results = context.user_data.get("search_results")
+        if results is not None and not results.empty:
+            context.user_data["page"] = page
+            page_text = render_page(results, page, lang)
+            await query.message.edit_text(
+                page_text,
+                reply_markup=results_nav_keyboard(lang, page, len(results))
+            )
+        return
+
+    # Обробка експорту даних
+    elif data == "export_success_csv":
+        await export_data(update, context, "success", "csv")
+    elif data == "export_fail_csv":
+        await export_data(update, context, "fail", "csv")
+    elif data == "export_success_excel":
+        await export_data(update, context, "success", "excel")
+    elif data == "export_fail_excel":
+        await export_data(update, context, "fail", "excel")
+
+    elif data == "language":
+        await query.message.reply_text(LANGUAGES[lang]["choose_lang"], reply_markup=language_menu_keyboard())
+    elif data.startswith("lang_"):
+        lang = data.split("_")[1]
+        context.user_data["lang"] = lang
+        await query.message.reply_text(
+            LANGUAGES[lang]["changed"].format(lang=LANGUAGES[lang]["name"]),
+            reply_markup=main_menu_keyboard(lang)
+        )
+    elif data == "search":
+        await query.message.reply_text(LANGUAGES[lang]["enter_search"])
+    elif data == "contacts":
+        await query.message.reply_text(LANGUAGES[lang]["contacts"], reply_markup=back_to_menu_keyboard(lang))
+    elif data == "help":
+        await query.message.reply_text(LANGUAGES[lang]["help"], reply_markup=back_to_menu_keyboard(lang))
+    elif data == "menu":
+        await query.message.reply_text(LANGUAGES[lang]["back_menu"], reply_markup=main_menu_keyboard(lang))
 
 def main():
     if not TOKEN:
         raise RuntimeError("BOT_TOKEN is not set")
     app = Application.builder().token(TOKEN).build()
     app.add_handler(CommandHandler("start", start))
+    app.add_handler(CommandHandler("stats", stats_command))  # Додано команду /stats
     app.add_handler(CallbackQueryHandler(button))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, search_database))
     app.run_polling()
