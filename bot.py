@@ -89,7 +89,7 @@ LANGUAGES = {
         "enter_search": "Введіть артикул блоку чи назву датасету для пошуку ⤵️",
         "empty_query": "⚠️ Ви нічого не ввели. Спробуйте ще раз ⤵️",
         "short_query": "⚠️ Запит занадто короткий. Введіть мінімум 3 символи ⤵️",
-        "back_menu": "🏠 Ви повернулися в головне меню.\n📊 Станом на {date} маємо {count} шт.\nДля початку, виберіть розділ ⤵️",
+        "back_menu": "🏠 Ви повернулися в головне меню.\nДля початку, виберіть розділ ⤵️",
         "search_ok": "✅ Знайдено результати!",
         "page_info": "📖 Сторінка {cur} з {total}"
     },
@@ -126,7 +126,7 @@ LANGUAGES = {
         "enter_search": "Enter the article number or dataset name to search ⤵️",
         "empty_query": "⚠️ You didn't type anything. Try again ⤵️",
         "short_query": "⚠️ Query too short. Please enter at least 3 characters ⤵️",
-        "back_menu": "🏠 You returned to the main menu.\n📊 As of {date} we have {count} pcs.\nPlease choose a section ⤵️",
+        "back_menu": "🏠 You returned to the main menu.\nPlease choose a section ⤵️",
         "search_ok": "✅ Results found!",
         "page_info": "📖 Page {cur} of {total}"
     },
@@ -163,7 +163,7 @@ LANGUAGES = {
         "enter_search": "Geben Sie die Artikelnummer oder den Datensatznamen ein ⤵️",
         "empty_query": "⚠️ Sie haben nichts eingegeben. Bitte erneut versuchen ⤵️",
         "short_query": "⚠️ Anfrage zu kurz. Bitte mindestens 3 Zeichen eingeben ⤵️",
-        "back_menu": "🏠 Sie sind ins Hauptmenü zurückgekehrt.\n📊 Stand {date} haben wir {count} Stk.\nBitte wählen Sie einen Bereich ⤵️",
+        "back_menu": "🏠 Sie sind ins Hauptmenü zurückgekehrt.\nBitte wählen Sie einen Bereich ⤵️",
         "search_ok": "✅ Ergebnisse gefunden!",
         "page_info": "📖 Seite {cur} von {total}"
     },
@@ -200,7 +200,7 @@ LANGUAGES = {
         "enter_search": "Entrez le numéro de l’article ou le nom du dataset ⤵️",
         "empty_query": "⚠️ Vous n’avez rien saisi. Essayez encore ⤵️",
         "short_query": "⚠️ Requête trop courte. Entrez au moins 3 caractères ⤵️",
-        "back_menu": "🏠 Vous êtes retourné au menu principal.\n📊 Au {date} nous avons {count} pièces.\nVeuillez choisir une section ⤵️",
+        "back_menu": "🏠 Vous êtes retourné au menu principal.\nVeuillez choisir une section ⤵️",
         "search_ok": "✅ Résultats trouvés!",
         "page_info": "📖 Page {cur} sur {total}"
     },
@@ -237,7 +237,7 @@ LANGUAGES = {
         "enter_search": "Ingrese el número de artículo o el nombre del dataset ⤵️",
         "empty_query": "⚠️ No escribiste nada. Intenta de nuevo ⤵️",
         "short_query": "⚠️ Consulta demasiado corta. Escribe al menos 3 caracteres ⤵️",
-        "back_menu": "🏠 Has vuelto al menú principal.\n📊 Al {date} tenemos {count} piezas.\nElija una sección ⤵️",
+        "back_menu": "🏠 Has vuelto al menú principal.\nElija una sección ⤵️",
         "search_ok": "✅ ¡Resultados encontrados!",
         "page_info": "📖 Página {cur} de {total}"
     },
@@ -274,7 +274,7 @@ LANGUAGES = {
         "enter_search": "Inserisci il numero dell’articolo o il nome del dataset ⤵️",
         "empty_query": "⚠️ Non hai digitato nulla. Riprova ⤵️",
         "short_query": "⚠️ Query troppo corta. Inserisci almeno 3 caratteri ⤵️",
-        "back_menu": "🏠 Sei tornato al menu principale.\n📊 Al {date} abbiamo {count} pezzi.\nSeleziona una sezione ⤵️",
+        "back_menu": "🏠 Sei tornato al menu principale.\nSeleziona una sezione ⤵️",
         "search_ok": "✅ Risultati trovati!",
         "page_info": "📖 Pagina {cur} di {total}"
     },
@@ -311,7 +311,7 @@ LANGUAGES = {
         "enter_search": "Digite o número do artigo ou o nome do dataset ⤵️",
         "empty_query": "⚠️ Você não digitou nada. Tente novamente ⤵️",
         "short_query": "⚠️ Consulta muito curta. Digite pelo menos 3 caracteres ⤵️",
-        "back_menu": "🏠 Você voltou ao menu principal.\n📊 Em {date} temos {count} peças.\nEscolha uma seção ⤵️",
+        "back_menu": "🏠 Você voltou ao menu principal.\nEscolha uma seção ⤵️",
         "search_ok": "✅ Resultados encontrados!",
         "page_info": "📖 Página {cur} de {total}"
     },
@@ -348,7 +348,7 @@ LANGUAGES = {
         "enter_search": "Wprowadź numer artykułu lub nazwę zestawu danych ⤵️",
         "empty_query": "⚠️ Nie wprowadziłeś nic. Spróbuj ponownie ⤵️",
         "short_query": "⚠️ Zapytanie zbyt krótkie. Wprowadź co najmniej 3 znaki ⤵️",
-        "back_menu": "🏠 Wróciłeś do menu głównego.\n📊 Stan na {date} mamy {count} szt.\nWybierz sekcję ⤵️",
+        "back_menu": "🏠 Wróciłeś do menu głównego.\nWybierz sekcję ⤵️",
         "search_ok": "✅ Znaleziono wyniki!",
         "page_info": "📖 Strona {cur} z {total}"
     },
@@ -385,7 +385,7 @@ LANGUAGES = {
         "enter_search": "Aramak için makale numarasını veya veri seti adını girin ⤵️",
         "empty_query": "⚠️ Hiçbir şey yazmadınız. Tekrar deneyin ⤵️",
         "short_query": "⚠️ Sorgu çok kısa. Lütfen en az 3 karakter girin ⤵️",
-        "back_menu": "🏠 Ana menüye döndünüz.\n📊 {date} itibarıyla {count} adet bulunmaktadır.\nLütfen bir bölüm seçin ⤵️",
+        "back_menu": "🏠 Ana menüye döndünüz.\nLütfen bir bölüm seçin ⤵️",
         "search_ok": "✅ Sonuçlar bulundu!",
         "page_info": "📖 Sayfa {cur} / {total}"
     },
@@ -422,7 +422,7 @@ LANGUAGES = {
         "enter_search": "输入文章编号或数据集名称进行搜索 ⤵️",
         "empty_query": "⚠️ 您没有输入任何内容。请重试 ⤵️",
         "short_query": "⚠️ 查询太短。请输入至少3个字符 ⤵️",
-        "back_menu": "🏠 您已返回主菜单。\n📊 截至{date}，我们有{count}个数据集。\n请选择一个部分 ⤵️",
+        "back_menu": "🏠 您已返回主菜单。\n请选择一个部分 ⤵️",
         "search_ok": "✅ 找到结果！",
         "page_info": "📖 第 {cur} 页，共 {total} 页"
     },
@@ -459,7 +459,7 @@ LANGUAGES = {
         "enter_search": "أدخل رقم المادة أو اسم مجموعة البيانات للبحث ⤵️",
         "empty_query": "⚠️ لم تدخل أي شيء. حاول مرة أخرى ⤵️",
         "short_query": "⚠️ الاستعلام قصير جدًا. يرجى إدخال 3 أحرف على الأقل ⤵️",
-        "back_menu": "🏠 لقد عدت إلى القائمة الرئيسية.\n📊 اعتبارًا من {date} لدينا {count} قطعة.\nيرجى اختيار قسم ⤵️",
+        "back_menu": "🏠 لقد عدت إلى القائمة الرئيسية.\nيرجى اختيار قسم ⤵️",
         "search_ok": "✅ تم العثور على نتائج!",
         "page_info": "📖 الصفحة {cur} من {total}"
     }
