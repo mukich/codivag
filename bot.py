@@ -22,15 +22,15 @@ def load_dataframe(path: str = "all-in-one.xlsx") -> pd.DataFrame:
     try:
         df = pd.read_excel(path)
     except Exception:
-        df = pd.DataFrame(columns=["Article", "Version", "Dataset", "Model", "Year", "Region"])
-    for col in ["Article", "Version", "Dataset", "Model", "Year", "Region"]:
+        df = pd.DataFrame(columns=["Article", "Version", "Dataset", "Model", "Year", "Region", "Unit"])
+    for col in ["Article", "Version", "Dataset", "Model", "Year", "Region", "Unit"]:
         if col not in df.columns:
             df[col] = ""
     try:
         df["Year"] = df["Year"].apply(lambda x: int(x) if pd.notna(x) and str(x).strip() != "" else "")
     except Exception:
         pass
-    for col in ["Article", "Version", "Dataset", "Model", "Region"]:
+    for col in ["Article", "Version", "Dataset", "Model", "Region", "Unit"]:
         try:
             df[col] = df[col].astype(str)
         except Exception:
@@ -58,7 +58,7 @@ def get_file_modification_date(filename="all-in-one.xlsx"):
 LANGUAGES = {
     "uk": {
         "name": "Українська",
-        "start": "Привіт!😉\nЦе телеграм-бот із пошуку датасетів.\n📊 Станом на {date} маємо: {count} шт.\nДля початку, виберіть розділ ⤵️",
+        "start": "Привіт!😉\nЦе телеграм-бот із пошуку датасетів.\n📊 Станом на {date} маємо {count} шт.\nДля початку, виберіть розділ ⤵️",
         "menu": {
             "search": "🔍 Пошук у базі",
             "contacts": "📞 Контакти",
@@ -73,7 +73,8 @@ LANGUAGES = {
             "dataset": "📊 *Датасет:*",
             "model": "🚙 *Модель:*",
             "year": "📅 *Рік:*",
-            "region": "🌍 *Регіон:*"
+            "region": "🌍 *Регіон:*",
+            "unit": "🔧 *Блок:*"
         },
         "nav": {
             "prev": "⬅️ Назад",
@@ -94,7 +95,7 @@ LANGUAGES = {
     },
     "en": {
         "name": "English",
-        "start": "Hello!😉\nThis is a dataset search bot.\n📊 As of {date} we have: {count} pcs.\nPlease choose a section ⤵️",
+        "start": "Hello!😉\nThis is a dataset search bot.\n📊 As of {date} we have {count} pcs.\nPlease choose a section ⤵️",
         "menu": {
             "search": "🔍 Search database",
             "contacts": "📞 Contacts",
@@ -109,7 +110,8 @@ LANGUAGES = {
             "dataset": "📊 *Dataset:*",
             "model": "🚙 *Model:*",
             "year": "📅 *Year:*",
-            "region": "🌍 *Region:*"
+            "region": "🌍 *Region:*",
+            "unit": "🔧 *Unit:*"
         },
         "nav": {
             "prev": "⬅️ Prev",
@@ -130,7 +132,7 @@ LANGUAGES = {
     },
     "de": {
         "name": "Deutsch",
-        "start": "Hallo!😉\nDies ist ein Datensatz-Suchbot.\n📊 Stand {date} haben wir: {count} Stk.\nBitte wählen Sie einen Bereich ⤵️",
+        "start": "Hallo!😉\nDies ist ein Datensatz-Suchbot.\n📊 Stand {date} haben wir {count} Stk.\nBitte wählen Sie einen Bereich ⤵️",
         "menu": {
             "search": "🔍 In Datenbank suchen",
             "contacts": "📞 Kontakte",
@@ -145,7 +147,8 @@ LANGUAGES = {
             "dataset": "📊 *Datensatz:*",
             "model": "🚙 *Modell:*",
             "year": "📅 *Jahr:*",
-            "region": "🌍 *Region:*"
+            "region": "🌍 *Region:*",
+            "unit": "🔧 *Steuereinheit:*"
         },
         "nav": {
             "prev": "⬅️ Zurück",
@@ -166,7 +169,7 @@ LANGUAGES = {
     },
     "fr": {
         "name": "Français",
-        "start": "Salut!😉\nCeci est un bot de recherche de jeux de données.\n📊 Au {date} nous avons: {count} pièces.\nVeuillez choisir une section ⤵️",
+        "start": "Salut!😉\nCeci est un bot de recherche de jeux de données.\n📊 Au {date} nous avons {count} pièces.\nVeuillez choisir une section ⤵️",
         "menu": {
             "search": "🔍 Recherche dans la base",
             "contacts": "📞 Contacts",
@@ -181,7 +184,8 @@ LANGUAGES = {
             "dataset": "📊 *Jeu de données:*",
             "model": "🚙 *Modèle:*",
             "year": "📅 *Année:*",
-            "region": "🌍 *Région:*"
+            "region": "🌍 *Région:*",
+            "unit": "🔧 *Unité:*"
         },
         "nav": {
             "prev": "⬅️ Précédent",
@@ -202,7 +206,7 @@ LANGUAGES = {
     },
     "es": {
         "name": "Español",
-        "start": "¡Hola!😉\nEste es un bot de búsqueda de conjuntos de datos.\n📊 Al {date} tenemos: {count} piezas.\nElija una sección ⤵️",
+        "start": "¡Hola!😉\nEste es un bot de búsqueda de conjuntos de datos.\n📊 Al {date} tenemos {count} piezas.\nElija una sección ⤵️",
         "menu": {
             "search": "🔍 Buscar en la base",
             "contacts": "📞 Contactos",
@@ -217,7 +221,8 @@ LANGUAGES = {
             "dataset": "📊 *Conjunto de datos:*",
             "model": "🚙 *Modelo:*",
             "year": "📅 *Año:*",
-            "region": "🌍 *Región:*"
+            "region": "🌍 *Región:*",
+            "unit": "🔧 *Unidad:*"
         },
         "nav": {
             "prev": "⬅️ Anterior",
@@ -238,7 +243,7 @@ LANGUAGES = {
     },
     "it": {
         "name": "Italiano",
-        "start": "Ciao!😉\nQuesto è un bot per la ricerca di dataset.\n📊 Al {date} abbiamo: {count} pezzi.\nSeleziona una sezione ⤵️",
+        "start": "Ciao!😉\nQuesto è un bot per la ricerca di dataset.\n📊 Al {date} abbiamo {count} pezzi.\nSeleziona una sezione ⤵️",
         "menu": {
             "search": "🔍 Cerca nel database",
             "contacts": "📞 Contatti",
@@ -253,7 +258,8 @@ LANGUAGES = {
             "dataset": "📊 *Dataset:*",
             "model": "🚙 *Modello:*",
             "year": "📅 *Anno:*",
-            "region": "🌍 *Regione:*"
+            "region": "🌍 *Regione:*",
+            "unit": "🔧 *Unità:*"
         },
         "nav": {
             "prev": "⬅️ Indietro",
@@ -274,7 +280,7 @@ LANGUAGES = {
     },
     "pt": {
         "name": "Português",
-        "start": "Olá!😉\nEste é um bot de pesquisa de conjuntos de dados.\n📊 Em {date} temos: {count} peças.\nEscolha uma seção ⤵️",
+        "start": "Olá!😉\nEste é um bot de pesquisa de conjuntos de dados.\n📊 Em {date} temos {count} peças.\nEscolha uma seção ⤵️",
         "menu": {
             "search": "🔍 Pesquisar na base",
             "contacts": "📞 Contatos",
@@ -289,7 +295,8 @@ LANGUAGES = {
             "dataset": "📊 *Conjunto de dados:*",
             "model": "🚙 *Modelo:*",
             "year": "📅 *Ano:*",
-            "region": "🌍 *Região:*"
+            "region": "🌍 *Região:*",
+            "unit": "🔧 *Unidade:*"
         },
         "nav": {
             "prev": "⬅️ Anterior",
@@ -307,6 +314,154 @@ LANGUAGES = {
         "back_menu": "🏠 Você voltou ao menu principal.",
         "search_ok": "✅ Resultados encontrados!",
         "page_info": "📖 Página {cur} de {total}"
+    },
+    "pl": {
+        "name": "Polski",
+        "start": "Cześć!😉\nTo jest bot do wyszukiwania zestawów danych.\n📊 Stan na {date} mamy {count} szt.\nWybierz sekcję ⤵️",
+        "menu": {
+            "search": "🔍 Szukaj w bazie",
+            "contacts": "📞 Kontakty",
+            "help": "ℹ️ Pomoc",
+            "language": "🌐 Język",
+            "back": "🏠 Wróć do menu",
+            "main": "🏠 Menu główne"
+        },
+        "labels": {
+            "article": "🆔 *Artykuł:*",
+            "version": "🔢 *Wersja:*",
+            "dataset": "📊 *Zestaw danych:*",
+            "model": "🚙 *Model:*",
+            "year": "📅 *Rok:*",
+            "region": "🌍 *Region:*",
+            "unit": "🔧 *Jednostka:*"
+        },
+        "nav": {
+            "prev": "⬅️ Wstecz",
+            "next": "➡️ Dalej",
+            "main": "🏠 Menu główne"
+        },
+        "help": "ℹ️ Pomoc:\nTen bot Telegram został stworzony do szybkiego wyszukiwania zestawów danych w naszej bazie.\nAby wyszukać, po prostu wprowadź numer artykułu lub nazwę zestawu danych",
+        "contacts": "📞 Kontakty:\nEmail: datenflash@proton.me\nTelegram: @mukich1 lub @mr_muhich\nInstagram: @codiVAG",
+        "choose_lang": "🌐 Wybierz język:",
+        "changed": "✅ Język zmieniony na {lang}",
+        "not_found": "⚠️ Nic nie znaleziono.",
+        "enter_search": "Wprowadź numer artykułu lub nazwę zestawu danych ⤵️",
+        "empty_query": "⚠️ Nie wprowadziłeś nic. Spróbuj ponownie ⤵️",
+        "short_query": "⚠️ Zapytanie zbyt krótkie. Wprowadź co najmniej 3 znaki ⤵️",
+        "back_menu": "🏠 Wróciłeś do menu głównego.",
+        "search_ok": "✅ Znaleziono wyniki!",
+        "page_info": "📖 Strona {cur} z {total}"
+    },
+    "tr": {
+        "name": "Türkçe",
+        "start": "Merhaba!😉\nBu bir veri seti arama botudur.\n📊 {date} itibarıyla {count} adet bulunmaktadır.\nLütfen bir bölüm seçin ⤵️",
+        "menu": {
+            "search": "🔍 Veritabanında ara",
+            "contacts": "📞 İletişim",
+            "help": "ℹ️ Yardım",
+            "language": "🌐 Dil",
+            "back": "🏠 Menüye dön",
+            "main": "🏠 Ana menü"
+        },
+        "labels": {
+            "article": "🆔 *Makale:*",
+            "version": "🔢 *Versiyon:*",
+            "dataset": "📊 *Veri seti:*",
+            "model": "🚙 *Model:*",
+            "year": "📅 *Yıl:*",
+            "region": "🌍 *Bölge:*",
+            "unit": "🔧 *Ünite:*"
+        },
+        "nav": {
+            "prev": "⬅️ Geri",
+            "next": "➡️ İleri",
+            "main": "🏠 Ana menü"
+        },
+        "help": "ℹ️ Yardım:\nBu Telegram botu, veritabanımızdaki veri setlerini hızlı bir şekilde aramak için tasarlanmıştır.\nAramak için kontrol ünitesi makale numarasını veya veri seti adını girin",
+        "contacts": "📞 İletişim:\nEmail: datenflash@proton.me\nTelegram: @mukich1 veya @mr_muhich\nInstagram: @codiVAG",
+        "choose_lang": "🌐 Dil seçin:",
+        "changed": "✅ Dil {lang} olarak değiştirildi",
+        "not_found": "⚠️ Hiçbir şey bulunamadı.",
+        "enter_search": "Aramak için makale numarasını veya veri seti adını girin ⤵️",
+        "empty_query": "⚠️ Hiçbir şey yazmadınız. Tekrar deneyin ⤵️",
+        "short_query": "⚠️ Sorgu çok kısa. Lütfen en az 3 karakter girin ⤵️",
+        "back_menu": "🏠 Ana menüye döndünüz.",
+        "search_ok": "✅ Sonuçlar bulundu!",
+        "page_info": "📖 Sayfa {cur} / {total}"
+    },
+    "zh": {
+        "name": "中文",
+        "start": "你好！😉\n这是一个数据集搜索机器人。\n📊 截至{date}，我们有{count}个数据集。\n请选择一个部分 ⤵️",
+        "menu": {
+            "search": "🔍 搜索数据库",
+            "contacts": "📞 联系方式",
+            "help": "ℹ️ 帮助",
+            "language": "🌐 语言",
+            "back": "🏠 返回主菜单",
+            "main": "🏠 主菜单"
+        },
+        "labels": {
+            "article": "🆔 *文章编号:*",
+            "version": "🔢 *版本:*",
+            "dataset": "📊 *数据集:*",
+            "model": "🚙 *型号:*",
+            "year": "📅 *年份:*",
+            "region": "🌍 *地区:*",
+            "unit": "🔧 *单元:*"
+        },
+        "nav": {
+            "prev": "⬅️ 上一页",
+            "next": "➡️ 下一页",
+            "main": "🏠 主菜单"
+        },
+        "help": "ℹ️ 帮助:\n这个Telegram机器人用于快速搜索我们数据库中的数据集。\n要搜索，只需输入控制单元文章编号或数据集名称",
+        "contacts": "📞 联系方式:\nEmail: datenflash@proton.me\nTelegram: @mukich1 或 @mr_muhich\nInstagram: @codiVAG",
+        "choose_lang": "🌐 选择语言:",
+        "changed": "✅ 语言已更改为 {lang}",
+        "not_found": "⚠️ 未找到任何内容。",
+        "enter_search": "输入文章编号或数据集名称进行搜索 ⤵️",
+        "empty_query": "⚠️ 您没有输入任何内容。请重试 ⤵️",
+        "short_query": "⚠️ 查询太短。请输入至少3个字符 ⤵️",
+        "back_menu": "🏠 您已返回主菜单。",
+        "search_ok": "✅ 找到结果！",
+        "page_info": "📖 第 {cur} 页，共 {total} 页"
+    },
+    "ar": {
+        "name": "العربية",
+        "start": "مرحبًا!😉\nهذا بوت للبحث في مجموعات البيانات.\n📊 اعتبارًا من {date} لدينا {count} قطعة.\nيرجى اختيار قسم ⤵️",
+        "menu": {
+            "search": "🔍 البحث في القاعدة",
+            "contacts": "📞 جهات الاتصال",
+            "help": "ℹ️ المساعدة",
+            "language": "🌐 اللغة",
+            "back": "🏠 العودة إلى القائمة",
+            "main": "🏠 القائمة الرئيسية"
+        },
+        "labels": {
+            "article": "🆔 *المادة:*",
+            "version": "🔢 *الإصدار:*",
+            "dataset": "📊 *مجموعة البيانات:*",
+            "model": "🚙 *الموديل:*",
+            "year": "📅 *السنة:*",
+            "region": "🌍 *المنطقة:*",
+            "unit": "🔧 *الوحدة:*"
+        },
+        "nav": {
+            "prev": "⬅️ السابق",
+            "next": "➡️ التالي",
+            "main": "🏠 القائمة الرئيسية"
+        },
+        "help": "ℹ️ المساعدة:\nتم تصميم هذا البوت للبحث السريع عن مجموعات البيانات في قاعدة البيانات الخاصة بنا.\nللبحث، ما عليك سوى إدخال رقم المادة أو اسم مجموعة البيانات",
+        "contacts": "📞 جهات الاتصال:\nEmail: datenflash@proton.me\nTelegram: @mukich1 أو @mr_muhich\nInstagram: @codiVAG",
+        "choose_lang": "🌐 اختر اللغة:",
+        "changed": "✅ تم تغيير اللغة إلى {lang}",
+        "not_found": "⚠️ لم يتم العثور على شيء.",
+        "enter_search": "أدخل رقم المادة أو اسم مجموعة البيانات للبحث ⤵️",
+        "empty_query": "⚠️ لم تدخل أي شيء. حاول مرة أخرى ⤵️",
+        "short_query": "⚠️ الاستعلام قصير جدًا. يرجى إدخال 3 أحرف على الأقل ⤵️",
+        "back_menu": "🏠 لقد عدت إلى القائمة الرئيسية.",
+        "search_ok": "✅ تم العثور على نتائج!",
+        "page_info": "📖 الصفحة {cur} من {total}"
     }
 }  # ⚠️ вставити повний словник з 7 мовами
 
@@ -332,7 +487,11 @@ def language_menu_keyboard():
         [InlineKeyboardButton("Español", callback_data="lang_es")],
         [InlineKeyboardButton("Italiano", callback_data="lang_it")],
         [InlineKeyboardButton("Português", callback_data="lang_pt")],
-        [InlineKeyboardButton("Українська", callback_data="lang_uk")]
+        [InlineKeyboardButton("Polski", callback_data="lang_pl")],
+        [InlineKeyboardButton("Türkçe", callback_data="lang_tr")],
+        [InlineKeyboardButton("Українська", callback_data="lang_uk")],
+        [InlineKeyboardButton("中文", callback_data="lang_zh")],
+        [InlineKeyboardButton("العربية", callback_data="lang_ar")]
     ]
     return InlineKeyboardMarkup(keyboard)
 
@@ -352,7 +511,8 @@ def render_result(row, lang="uk"):
         f"{labels['dataset']} {clean(row['Dataset'])}\n"
         f"{labels['model']} {clean(row['Model'])}\n"
         f"{labels['year']} {clean(row['Year'])}\n"
-        f"{labels['region']} {clean(row['Region'])}"
+        f"{labels['region']} {clean(row['Region'])}\n"
+        f"{labels['unit']} {clean(row['Unit'])}"
     )
 
 def render_page(results: pd.DataFrame, page: int, lang="uk", per_page: int = 5) -> str:
