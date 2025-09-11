@@ -4,6 +4,7 @@ from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Application, CommandHandler, CallbackQueryHandler, MessageHandler, filters, ContextTypes
 from collections import Counter
 import io
+import datetime
 
 TOKEN = os.getenv("BOT_TOKEN")
 
@@ -46,10 +47,18 @@ def count_filled_rows():
     except Exception:
         return 0
 
+# Функція для отримання дати модифікації файлу
+def get_file_modification_date(filename="all-in-one.xlsx"):
+    try:
+        mod_time = os.path.getmtime(filename)
+        return datetime.datetime.fromtimestamp(mod_time).strftime("%d.%m.%Y")
+    except:
+        return "невідомо"
+
 LANGUAGES = {
     "uk": {
         "name": "Українська",
-        "start": "Привіт!😉\nЦе телеграм-бот із пошуку датасетів.\n📊 У базі даних: {count} шт.\nДля початку, виберіть розділ ⤵️",
+        "start": "Привіт!😉\nЦе телеграм-бот із пошуку датасетів.\n📊 Станом на {date} маємо: {count} шт.\nДля початку, виберіть розділ ⤵️",
         "menu": {
             "search": "🔍 Пошук у базі",
             "contacts": "📞 Контакти",
@@ -85,7 +94,7 @@ LANGUAGES = {
     },
     "en": {
         "name": "English",
-        "start": "Hello!😉\nThis is a dataset search bot.\n📊 Database contains: {count} pcs.\nPlease choose a section ⤵️",
+        "start": "Hello!😉\nThis is a dataset search bot.\n📊 As of {date} we have: {count} pcs.\nPlease choose a section ⤵️",
         "menu": {
             "search": "🔍 Search database",
             "contacts": "📞 Contacts",
@@ -121,7 +130,7 @@ LANGUAGES = {
     },
     "de": {
         "name": "Deutsch",
-        "start": "Hallo!😉\nDies ist ein Datensatz-Suchbot.\n📊 Datenbank enthält: {count} Stk.\nBitte wählen Sie einen Bereich ⤵️",
+        "start": "Hallo!😉\nDies ist ein Datensatz-Suchbot.\n📊 Stand {date} haben wir: {count} Stk.\nBitte wählen Sie einen Bereich ⤵️",
         "menu": {
             "search": "🔍 In Datenbank suchen",
             "contacts": "📞 Kontakte",
@@ -157,7 +166,7 @@ LANGUAGES = {
     },
     "fr": {
         "name": "Français",
-        "start": "Salut!😉\nCeci est un bot de recherche de jeux de données.\n📊 Base de données contient: {count} pièces.\nVeuillez choisir une section ⤵️",
+        "start": "Salut!😉\nCeci est un bot de recherche de jeux de données.\n📊 Au {date} nous avons: {count} pièces.\nVeuillez choisir une section ⤵️",
         "menu": {
             "search": "🔍 Recherche dans la base",
             "contacts": "📞 Contacts",
@@ -193,7 +202,7 @@ LANGUAGES = {
     },
     "es": {
         "name": "Español",
-        "start": "¡Hola!😉\nEste es un bot de búsqueda de conjuntos de datos.\n📊 Base de datos contiene: {count} piezas.\nElija una sección ⤵️",
+        "start": "¡Hola!😉\nEste es un bot de búsqueda de conjuntos de datos.\n📊 Al {date} tenemos: {count} piezas.\nElija una sección ⤵️",
         "menu": {
             "search": "🔍 Buscar en la base",
             "contacts": "📞 Contactos",
@@ -229,7 +238,7 @@ LANGUAGES = {
     },
     "it": {
         "name": "Italiano",
-        "start": "Ciao!😉\nQuesto è un bot per la ricerca di dataset.\n📊 Database contiene: {count} pezzi.\nSeleziona una sezione ⤵️",
+        "start": "Ciao!😉\nQuesto è un bot per la ricerca di dataset.\n📊 Al {date} abbiamo: {count} pezzi.\nSeleziona una sezione ⤵️",
         "menu": {
             "search": "🔍 Cerca nel database",
             "contacts": "📞 Contatti",
@@ -265,7 +274,7 @@ LANGUAGES = {
     },
     "pt": {
         "name": "Português",
-        "start": "Olá!😉\nEste é um bot de pesquisa de conjuntos de dados.\n📊 Base de dados contém: {count} peças.\nEscolha uma seção ⤵️",
+        "start": "Olá!😉\nEste é um bot de pesquisa de conjuntos de dados.\n📊 Em {date} temos: {count} peças.\nEscolha uma seção ⤵️",
         "menu": {
             "search": "🔍 Pesquisar na base",
             "contacts": "📞 Contatos",
@@ -375,7 +384,8 @@ def results_nav_keyboard(lang, page, total_items, per_page: int = 5):
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     lang = get_lang(context)
     count = count_filled_rows()
-    start_message = LANGUAGES[lang]["start"].format(count=count)
+    mod_date = get_file_modification_date()
+    start_message = LANGUAGES[lang]["start"].format(date=mod_date, count=count)
     await update.message.reply_text(start_message, reply_markup=main_menu_keyboard(lang))
 
 async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
